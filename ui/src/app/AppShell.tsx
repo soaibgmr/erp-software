@@ -1,6 +1,18 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router";
-import { Bell, Check, ChevronDown, LogOut, Menu as MenuIcon, Plus, Search, Store, UserRound, X } from "lucide-react";
+import {
+  Bell,
+  Check,
+  ChevronDown,
+  CircleHelp,
+  LogOut,
+  Menu as MenuIcon,
+  Plus,
+  Search,
+  Store,
+  UserRound,
+  X,
+} from "lucide-react";
 import { useAuth } from "./auth";
 import { useHotkey } from "./hotkeys";
 import { NAV } from "./nav";
@@ -203,6 +215,7 @@ function TopBar({ onSearch, onMenu }: { onSearch: () => void; onMenu: () => void
         <Menu
           items={[
             { label: "My profile", icon: <UserRound className="size-4" />, onSelect: () => navigate("/profile") },
+            { label: "Help", icon: <CircleHelp className="size-4" />, onSelect: () => navigate("/help") },
             { label: "Log out", icon: <LogOut className="size-4" />, destructive: true, onSelect: () => void logout() },
           ]}
           trigger={(p) => (

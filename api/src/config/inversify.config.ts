@@ -78,6 +78,7 @@ import { AuditController } from "../modules/audit/audit.controller";
 
 // Unit of work
 import { PrismaUnitOfWork, type IUnitOfWork } from "../common/unit-of-work";
+import { PrismaAttemptLimiter, type IAttemptLimiter } from "../common/attempt-limiter";
 
 // Catalog masters
 import type { ICatalogRepository } from "../modules/catalog/interfaces/icatalog.repository";
@@ -168,6 +169,7 @@ const container = new Container();
 
 container.bind<PrismaClient>(TYPES.PrismaClient).toConstantValue(prisma);
 container.bind<IUnitOfWork>(TYPES.UnitOfWork).to(PrismaUnitOfWork).inSingletonScope();
+container.bind<IAttemptLimiter>(TYPES.AttemptLimiter).to(PrismaAttemptLimiter).inSingletonScope();
 
 // Middleware
 container.bind<AuthMiddleware>(TYPES.AuthMiddleware).to(AuthMiddleware).inSingletonScope();

@@ -1,4 +1,9 @@
-import { BUSINESS_STATUSES, businessStatusUpdateSchema, platformLoginSchema } from "@erp-software/shared";
+import {
+  BUSINESS_STATUSES,
+  businessStatusUpdateSchema,
+  demoRequestSchema,
+  platformLoginSchema,
+} from "@erp-software/shared";
 import {
   fromZod,
   operation,
@@ -9,11 +14,22 @@ import {
   type SchemaObject,
   success,
 } from "../../docs/openapi.helpers";
-import { listBusinessesQuerySchema } from "./platform.schema";
+import { demoRequestHandledSchema, listBusinessesQuerySchema, listDemoRequestsQuerySchema } from "./platform.schema";
 
 const s = { type: ["string", "null"] };
 
 export const platformSchemas: Record<string, SchemaObject> = {
+  DemoRequest: {
+    type: "object",
+    properties: {
+      id: { type: "string", format: "uuid" },
+      name: s,
+      mobile: { type: "string" },
+      email: s,
+      handledAt: { type: ["string", "null"], format: "date-time" },
+      createdAt: { type: "string", format: "date-time" },
+    },
+  },
   PlatformAdmin: {
     type: "object",
     properties: { id: { type: "string", format: "uuid" }, name: { type: "string" }, email: { type: "string" } },
@@ -85,6 +101,34 @@ export const platformPaths: Paths = {
       parameters: [pathParam("id")],
       body: fromZod(businessStatusUpdateSchema),
       responses: { 200: success("Status changed", ref("PlatformBusiness")) },
+    }),
+  },
+  "/api/v1/platform/demo-requests": {
+    post: operation({
+      tag,
+      summary: "Book a quick demo (public)",
+      description:
+        "From the public landing page; no login. Only `mobile` is required. Saved for the platform admin, who is emailed at `PLATFORM_ADMIN_NOTIFY_EMAIL`. Limited to 5 per hour per address.",
+      auth: "client",
+      body: fromZod(demoRequestSchema),
+      responses: { 201: success("Request received", { type: "null" }) },
+    }),
+    get: operation({
+      tag,
+      summary: "Demo requests",
+      description: `${note} Newest first.`,
+      parameters: queryParams(listDemoRequestsQuerySchema),
+      responses: { 200: success("Demo requests", { type: "array", items: ref("DemoRequest") }) },
+    }),
+  },
+  "/api/v1/platform/demo-requests/{id}": {
+    patch: operation({
+      tag,
+      summary: "Mark a demo request handled or open",
+      description: note,
+      parameters: [pathParam("id")],
+      body: fromZod(demoRequestHandledSchema),
+      responses: { 200: success("Updated", ref("DemoRequest")) },
     }),
   },
 };

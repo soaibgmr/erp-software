@@ -2,6 +2,7 @@ import type { ErrorRequestHandler, RequestHandler } from "express";
 import { Prisma } from "@prisma/client";
 import { HttpError } from "../common/http-error";
 import { sendError } from "../common/api-response";
+import { reportError } from "../config/monitoring";
 
 export const notFoundHandler: RequestHandler = (req, res) => {
   sendError(res, 404, "NOT_FOUND", `Route ${req.method} ${req.path} not found`);
@@ -31,5 +32,6 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   }
 
   req.log?.error({ err }, "Unhandled error");
+  reportError(err, req, res);
   sendError(res, 500, "INTERNAL_ERROR", "Internal server error");
 };

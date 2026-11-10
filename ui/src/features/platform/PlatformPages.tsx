@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate, Outlet } from "react-router";
+import { Navigate, NavLink, Outlet } from "react-router";
 import { Loader2, LogOut, Search, Store } from "lucide-react";
 import { BUSINESS_STATUS_LABELS, formatMobile, INDIAN_STATES, type BusinessStatus } from "@erp-software/shared";
 import { Logo } from "@/app/AppShell";
@@ -41,6 +41,22 @@ export function PlatformShell() {
         <div className="mx-auto flex h-14 max-w-[1200px] items-center gap-3 px-4">
           <Logo className="size-8" />
           <p className="font-semibold text-ink">Platform admin</p>
+          <nav className="ml-4 flex items-center gap-1" aria-label="Admin pages">
+            {[
+              { to: "/admin/shops", label: "Shops" },
+              { to: "/admin/demo-requests", label: "Demo requests" },
+            ].map((l) => (
+              <NavLink
+                key={l.to}
+                to={l.to}
+                className={({ isActive }) =>
+                  `rounded-input px-3 py-1.5 text-body font-medium ${isActive ? "bg-navy-50 text-navy-700" : "text-slate hover:bg-navy-50"}`
+                }
+              >
+                {l.label}
+              </NavLink>
+            ))}
+          </nav>
           <span className="ml-auto hidden text-helper text-slate sm:inline">{me.data.email}</span>
           <Button size="sm" variant="ghost" icon={<LogOut className="size-4" />} onClick={signOut}>
             Log out

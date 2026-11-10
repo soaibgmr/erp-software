@@ -1,5 +1,5 @@
 import { inject, injectable } from "inversify";
-import { milliToDecimal, priceCart, supplyTypeFor, toMilli, toPaise } from "@erp-software/shared";
+import { milliToDecimal, placeOfSupplyFor, priceCart, supplyTypeFor, toMilli, toPaise } from "@erp-software/shared";
 import { TYPES } from "../../config/ioc.types";
 import { hasPermission, type AuthContext } from "../../common/auth-context";
 import { fieldErrors, notFound } from "../../common/http-error";
@@ -109,8 +109,7 @@ export class CartPricer implements ICartPricer {
     if (issues.length) throw fieldErrors(issues);
     const lines = resolved.map((r) => r!);
 
-    // B2C counter sales are local; a customer with another state's place of supply pays IGST.
-    const placeOfSupply = customer?.stateCode ?? (customer?.gstin ? customer.gstin.slice(0, 2) : branch.stateCode);
+    const placeOfSupply = placeOfSupplyFor(branch.stateCode, customer?.gstin);
     const supplyType = supplyTypeFor(branch.stateCode, placeOfSupply);
     const priced = priceCart(lines, input.billDiscount ?? null, supplyType);
 

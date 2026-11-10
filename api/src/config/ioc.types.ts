@@ -1,6 +1,7 @@
 export const TYPES = {
   PrismaClient: Symbol.for("PrismaClient"),
   UnitOfWork: Symbol.for("UnitOfWork"),
+  AttemptLimiter: Symbol.for("AttemptLimiter"),
 
   // Middleware
   AuthMiddleware: Symbol.for("AuthMiddleware"),

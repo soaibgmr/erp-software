@@ -3,7 +3,14 @@ import { Prisma, PrismaClient, type BusinessStatus } from "@prisma/client";
 import { TYPES } from "../../config/ioc.types";
 import type { Paginated } from "../../common/pagination";
 import type { IPlatformRepository } from "./interfaces/iplatform.repository";
-import type { ListBusinessesQuery, OwnerContact, PlatformAdminDto, PlatformBusinessDto } from "./platform.types";
+import type {
+  DemoRequestDto,
+  ListBusinessesQuery,
+  ListDemoRequestsQuery,
+  OwnerContact,
+  PlatformAdminDto,
+  PlatformBusinessDto,
+} from "./platform.types";
 
 const ownerWhere = { deletedAt: null, role: { key: "OWNER" } } satisfies Prisma.UserWhereInput;
 
@@ -31,6 +38,15 @@ const businessSelect = {
     },
   },
 } satisfies Prisma.BusinessSelect;
+
+const demoRequestSelect = {
+  id: true,
+  name: true,
+  mobile: true,
+  email: true,
+  handledAt: true,
+  createdAt: true,
+} satisfies Prisma.DemoRequestSelect;
 
 type BusinessRow = Prisma.BusinessGetPayload<{ select: typeof businessSelect }>;
 
@@ -129,5 +145,38 @@ export class PlatformRepository implements IPlatformRepository {
       orderBy: { createdAt: "asc" },
       select: { firstName: true, email: true },
     });
+  }
+
+  createDemoRequest(data: {
+    name: string | null;
+    mobile: string;
+    email: string | null;
+    ip: string | null;
+  }): Promise<DemoRequestDto> {
+    return this.prisma.demoRequest.create({ data, select: demoRequestSelect });
+  }
+
+  async listDemoRequests({ page, limit, status }: ListDemoRequestsQuery): Promise<Paginated<DemoRequestDto>> {
+    const where: Prisma.DemoRequestWhereInput =
+      status === "open" ? { handledAt: null } : status === "handled" ? { handledAt: { not: null } } : {};
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.demoRequest.findMany({
+        where,
+        select: demoRequestSelect,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.demoRequest.count({ where }),
+    ]);
+    return { data, page, limit, total };
+  }
+
+  async setDemoRequestHandled(id: string, handled: boolean): Promise<DemoRequestDto | null> {
+    const { count } = await this.prisma.demoRequest.updateMany({
+      where: { id },
+      data: { handledAt: handled ? new Date() : null },
+    });
+    return count ? this.prisma.demoRequest.findUnique({ where: { id }, select: demoRequestSelect }) : null;
   }
 }

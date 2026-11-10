@@ -156,6 +156,17 @@ export const businessStatusUpdateSchema = z.strictObject({
 });
 export type BusinessStatusUpdate = z.output<typeof businessStatusUpdateSchema>;
 
+// "Book a quick demo" on the public landing page. Only the phone number is required.
+export const demoRequestSchema = z.strictObject({
+  name: optionalText(100),
+  mobile: mobileSchema,
+  email: optionalEmailSchema,
+  // Spam trap: hidden from people, so only bots fill it in. A filled one is accepted and dropped.
+  website: z.string().max(200).optional(),
+});
+export type DemoRequestInput = z.input<typeof demoRequestSchema>;
+export type DemoRequest = z.output<typeof demoRequestSchema>;
+
 // ---- Number series ----
 export const documentTypeSchema = z.enum(DOCUMENT_TYPES);
 

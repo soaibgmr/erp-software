@@ -9,6 +9,7 @@ import { BCRYPT_ROUNDS } from "../../common/constants";
 import type { AuthContext } from "../../common/auth-context";
 import { badRequest, fieldErrors, forbidden, notFound, unauthorized } from "../../common/http-error";
 import type { Paginated } from "../../common/pagination";
+import { ACCOUNT_LOCK, assertNotLocked, type IAttemptLimiter } from "../../common/attempt-limiter";
 import type { IAuditService } from "../audit/interfaces/iaudit.service";
 import type { IBranchRepository } from "../branches/interfaces/ibranch.repository";
 import type { IBusinessRepository } from "../business/interfaces/ibusiness.repository";
@@ -50,15 +51,21 @@ export class UserService implements IUserService {
     @inject(TYPES.BranchRepository) private readonly branches: IBranchRepository,
     @inject(TYPES.BusinessRepository) private readonly business: IBusinessRepository,
     @inject(TYPES.AuditService) private readonly audit: IAuditService,
+    @inject(TYPES.AttemptLimiter) private readonly limiter: IAttemptLimiter,
   ) {}
 
   async login({ identifier, password }: LoginDto, ip?: string): Promise<AuthResponseDto> {
+    // Locks the identifier (known account or not, so the lock reveals nothing) after repeated wrong passwords.
+    const lockKey = `login:${identifier.trim().toLowerCase()}`;
+    await assertNotLocked(this.limiter, lockKey);
     const found = await this.users.findCredentialsByIdentifier(identifier);
     const valid = await bcrypt.compare(password, found?.passwordHash ?? DUMMY_HASH);
 
     if (!found || !valid || found.status !== "ACTIVE") {
+      await this.limiter.hit(lockKey, ACCOUNT_LOCK.windowMs);
       throw unauthorized(INVALID_CREDENTIALS);
     }
+    await this.limiter.reset(lockKey);
     // Only after the password matched, so the shop's status is not revealed to strangers.
     assertBusinessActive(found.businessStatus);
 
@@ -160,6 +167,7 @@ export class UserService implements IUserService {
     const targetIsOwner = before.role.key === "OWNER";
 
     if (targetIsOwner && !auth.isOwner) throw forbidden("Only an owner can change an owner's account");
+    if (!isSelf) await this.assertCanManage(auth, before);
     if (isSelf && input.roleId && input.roleId !== before.role.id) throw badRequest("You cannot change your own role");
     if (isSelf && input.status && input.status !== "ACTIVE") throw badRequest("You cannot deactivate your own account");
 
@@ -199,9 +207,7 @@ export class UserService implements IUserService {
     if (id === auth.userId) throw badRequest("Change your own password from My profile");
     const target = await this.getById(auth.businessId, id);
     if (target.role.key === "OWNER" && !auth.isOwner) throw forbidden("Only an owner can change an owner's password");
-    if (!auth.isOwner && !target.branches.some((b) => auth.branchIds.includes(b.id))) {
-      throw forbidden("You can only change passwords of users in your branches");
-    }
+    await this.assertCanManage(auth, target);
     await this.users.updatePasswordHash(id, await bcrypt.hash(password, BCRYPT_ROUNDS));
     // Signs them out everywhere, so the old password stops working on every device.
     await this.refreshTokens.revokeAllForUser(id);
@@ -217,10 +223,23 @@ export class UserService implements IUserService {
         throw badRequest("At least one active owner is required");
       }
     }
+    await this.assertCanManage(auth, before);
 
     await this.users.softDelete(auth.businessId, id);
     await this.refreshTokens.revokeAllForUser(id);
     await this.audit.record(auth, { action: "user.delete", entity: "User", entityId: id, before });
+  }
+
+  // A non-owner may only manage users who share one of their branches and whose role is within their own
+  // permissions; otherwise they could change a stronger user's email or password and sign in as them.
+  private async assertCanManage(auth: AuthContext, target: UserResponseDto): Promise<void> {
+    if (auth.isOwner) return;
+    if (!target.branches.some((b) => auth.branchIds.includes(b.id))) {
+      throw forbidden("You can only manage users in your branches");
+    }
+    const role = await this.roles.findById(auth.businessId, target.role.id);
+    const missing = (role?.permissions ?? []).filter((p) => !(auth.permissions as string[]).includes(p));
+    if (!role || missing.length) throw forbidden("This user has permissions you don't have");
   }
 
   // Non-owners can only hand out roles within their own permissions, and only their own branches.

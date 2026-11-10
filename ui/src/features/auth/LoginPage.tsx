@@ -1,3 +1,4 @@
+import { APP_NAME } from "@/lib/brand";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -65,7 +66,7 @@ export function LoginPage() {
       subtitle="Log in to your business to start billing."
       footer={
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <span>New to ERP Software?</span>
+          <span>New to {APP_NAME}?</span>
           <Link
             to="/register"
             className="inline-flex h-10 items-center rounded-input border border-border px-4 font-medium text-navy-700 hover:bg-navy-50"

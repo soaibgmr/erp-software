@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { ChevronLeft, Clock, Keyboard, PauseCircle, Power, Printer } from "lucide-react";
-import { priceCart, supplyTypeFor, type PrintFormat } from "@erp-software/shared";
+import { placeOfSupplyFor, priceCart, supplyTypeFor, type PrintFormat } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Logo } from "@/app/AppShell";
 import { useHotkey } from "@/app/hotkeys";
@@ -221,7 +221,8 @@ function PosScreen({
   const selected = cart.lines.some((l) => lineKey(l) === selectedKey) ? selectedKey : null;
 
   // Instant totals with the shared engine; the debounced server quote confirms them.
-  const placeOfSupply = cart.customer?.stateCode ?? cart.customer?.gstin?.slice(0, 2) ?? branch?.stateCode ?? null;
+  // Same rule as the server (shared), so the preview matches the saved bill.
+  const placeOfSupply = branch ? placeOfSupplyFor(branch.stateCode, cart.customer?.gstin) : null;
   const supplyType = supplyTypeFor(branch?.stateCode ?? "", placeOfSupply);
   const totals = useMemo(
     () =>

@@ -43,6 +43,11 @@ const envSchema = z
           .filter(Boolean),
       ),
 
+    // Sentry project DSN. When set, unexpected (500) errors are reported there; otherwise only logged.
+    SENTRY_DSN: z.url().optional(),
+    // Environment name shown in Sentry (e.g. production, preview). Defaults to NODE_ENV.
+    SENTRY_ENVIRONMENT: z.string().optional(),
+
     LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
 
     // Public URL of the UI; links in emails (verify email, reset password) point here.

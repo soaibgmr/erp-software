@@ -2,13 +2,15 @@ import "reflect-metadata";
 import { describe, expect, it } from "vitest";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { demoRequestSchema } from "@erp-software/shared";
+import { env } from "../config/env";
 import type { BusinessStatus } from "@prisma/client";
 import { HttpError } from "../common/http-error";
 import { resolveBranchScope } from "../common/branch-scope";
 import { PLATFORM_AUDIENCE } from "../common/tenant";
 import type { IUnitOfWork } from "../common/unit-of-work";
 import { AuthMiddleware } from "../middleware/auth";
-import { authFor, branch, FakeAudit, ids, stub } from "../test/fakes";
+import { authFor, branch, FakeAudit, FakeLimiter, ids, stub } from "../test/fakes";
 import { CustomerService } from "./customers/customer.service";
 import { UserService } from "./users/user.service";
 import { AccountService } from "./users/account.service";
@@ -101,7 +103,7 @@ describe("Company data stays separate", () => {
 });
 
 describe("Login and shop status", () => {
-  function login(status: BusinessStatus, password = "right-password") {
+  function login(status: BusinessStatus, password = "right-password", limiter = new FakeLimiter()) {
     const hash = bcrypt.hashSync("right-password", 4);
     const users = stub<IUserRepository>({
       findCredentialsByIdentifier: async (identifier) =>
@@ -119,6 +121,7 @@ describe("Login and shop status", () => {
       stub<IBranchRepository>({}),
       stub<IBusinessRepository>({}),
       new FakeAudit(),
+      limiter,
     );
     return svc.login({ identifier: "9876543210", password });
   }
@@ -136,6 +139,19 @@ describe("Login and shop status", () => {
   it("a suspended or rejected shop can't log in", async () => {
     await expectHttp(login("SUSPENDED"), 403, "BUSINESS_SUSPENDED");
     await expectHttp(login("REJECTED"), 403, "BUSINESS_REJECTED");
+  });
+
+  it("locks the account after 8 wrong passwords, even for the right one", async () => {
+    const limiter = new FakeLimiter();
+    for (let i = 0; i < 8; i++) await expectHttp(login("ACTIVE", `guess-${i}`, limiter), 401);
+    await expectHttp(login("ACTIVE", "right-password", limiter), 429);
+  });
+
+  it("a successful sign-in clears earlier failures", async () => {
+    const limiter = new FakeLimiter();
+    for (let i = 0; i < 7; i++) await expectHttp(login("ACTIVE", `guess-${i}`, limiter), 401);
+    await login("ACTIVE", "right-password", limiter);
+    expect(limiter.counts.size).toBe(0);
   });
 
   it("a wrong password never reveals the shop's status", async () => {
@@ -287,7 +303,7 @@ describe("PlatformService", () => {
       },
       findOwnerContact: async () => ({ firstName: "Ravi", email: "ravi@shop.in" }),
     });
-    return { svc: new PlatformService(repo, mail, new FakeAudit()), mail };
+    return { svc: new PlatformService(repo, mail, new FakeAudit(), new FakeLimiter()), mail };
   }
   const admin = { adminId: "admin-1", email: "admin@product.in" };
 
@@ -301,5 +317,44 @@ describe("PlatformService", () => {
   it("only an active shop can be suspended", async () => {
     const { svc } = platform(pending);
     await expectHttp(svc.updateStatus(admin, pending.id, { status: "SUSPENDED", note: null }), 400);
+  });
+});
+
+describe("Book a quick demo", () => {
+  function setup() {
+    const saved: unknown[] = [];
+    const mail = new FakeMail();
+    const repo = stub<IPlatformRepository>({
+      createDemoRequest: async (data) => {
+        saved.push(data);
+        return { id: "d1", handledAt: null, createdAt: new Date(), ...data };
+      },
+    });
+    return { svc: new PlatformService(repo, mail, new FakeAudit(), new FakeLimiter()), saved, mail };
+  }
+
+  it("needs only a valid phone number", () => {
+    expect(demoRequestSchema.safeParse({ mobile: "98765 43210" }).data).toMatchObject({ mobile: "9876543210" });
+    expect(demoRequestSchema.safeParse({ name: "Ravi", email: "" }).success).toBe(false);
+    expect(demoRequestSchema.safeParse({ mobile: "12345" }).success).toBe(false);
+  });
+
+  it("saves the request and emails the platform admin", async () => {
+    const { svc, saved, mail } = setup();
+    const before = env.PLATFORM_ADMIN_NOTIFY_EMAIL;
+    (env as { PLATFORM_ADMIN_NOTIFY_EMAIL?: string }).PLATFORM_ADMIN_NOTIFY_EMAIL = "owner@product.in";
+    try {
+      await svc.requestDemo(demoRequestSchema.parse({ name: "Ravi", mobile: "9876543210", email: "" }), "1.2.3.4");
+    } finally {
+      (env as { PLATFORM_ADMIN_NOTIFY_EMAIL?: string }).PLATFORM_ADMIN_NOTIFY_EMAIL = before;
+    }
+    expect(saved).toEqual([{ name: "Ravi", mobile: "9876543210", email: null, ip: "1.2.3.4" }]);
+    expect(mail.sent[0]).toMatchObject({ to: "owner@product.in", subject: "Demo request: Ravi" });
+  });
+
+  it("silently drops a request with the spam trap filled in", async () => {
+    const { svc, saved } = setup();
+    await svc.requestDemo(demoRequestSchema.parse({ mobile: "9876543210", website: "http://spam" }));
+    expect(saved).toEqual([]);
   });
 });

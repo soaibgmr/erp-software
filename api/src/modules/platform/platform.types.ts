@@ -50,6 +50,22 @@ export interface ListBusinessesQuery {
   search?: string;
 }
 
+export interface DemoRequestDto {
+  id: string;
+  name: string | null;
+  mobile: string;
+  email: string | null;
+  handledAt: Date | null;
+  createdAt: Date;
+}
+
+export interface ListDemoRequestsQuery {
+  page: number;
+  limit: number;
+  /** open = not handled yet. */
+  status?: "open" | "handled";
+}
+
 export interface OwnerContact {
   firstName: string;
   email: string | null;

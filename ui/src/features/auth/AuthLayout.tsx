@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { BadgeIndianRupee, Boxes, FileSpreadsheet, ShieldCheck, Users } from "lucide-react";
 import { Logo } from "@/app/AppShell";
+import { APP_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 const YEAR = new Date().getFullYear();
@@ -43,7 +44,7 @@ export function AuthLayout({
         {/* Below lg the brand panel is hidden; keep the name visible above the form. */}
         <div className="flex items-center gap-3 px-6 pt-6 lg:hidden">
           <Logo className="size-9" />
-          <p className="text-card font-bold text-ink">ERP Software</p>
+          <p className="text-card font-bold text-ink">{APP_NAME}</p>
         </div>
 
         <div className="flex flex-1 items-center justify-center px-6 py-10 sm:px-10">
@@ -56,7 +57,7 @@ export function AuthLayout({
         </div>
 
         <p className="px-6 pb-6 text-center text-helper text-muted lg:text-left">
-          © {YEAR} ERP Software · Each business's data is kept separate and private.
+          © {YEAR} {APP_NAME} · Each business's data is kept separate and private.
         </p>
       </main>
     </div>
@@ -82,7 +83,7 @@ function BrandPanel() {
         <div className="flex items-center gap-3">
           <Logo className="size-10" />
           <div>
-            <p className="text-card font-bold">ERP Software</p>
+            <p className="text-card font-bold">{APP_NAME}</p>
             <p className="text-helper text-white/60">Billing & inventory for every business</p>
           </div>
         </div>

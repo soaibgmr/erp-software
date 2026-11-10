@@ -117,3 +117,10 @@ export function calculateGst(lines: GstLineInput[], supplyType: SupplyType): Gst
 }
 
 export { fromPaise };
+
+// Place of supply: a registered customer's state is the one in their GSTIN (B2B, IGST when it differs).
+// Goods sold over the counter to anyone else are supplied where they are handed over, i.e. the
+// branch's own state (CGST + SGST), whatever state their address is in.
+export function placeOfSupplyFor(branchStateCode: string, customerGstin?: string | null): string {
+  return customerGstin ? customerGstin.slice(0, 2) : branchStateCode;
+}

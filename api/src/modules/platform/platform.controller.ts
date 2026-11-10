@@ -22,6 +22,20 @@ export class PlatformController {
     sendPaginated(res, await this.platform.listBusinesses(res.locals.query));
   };
 
+  requestDemo = async (req: Request, res: Response) => {
+    await this.platform.requestDemo(res.locals.body, req.ip);
+    sendSuccess(res, null, { status: 201, message: "Thanks! We'll call you soon to book your demo." });
+  };
+
+  listDemoRequests = async (_req: Request, res: Response) => {
+    sendPaginated(res, await this.platform.listDemoRequests(res.locals.query));
+  };
+
+  setDemoRequestHandled = async (_req: Request, res: Response) => {
+    const found = await this.platform.setDemoRequestHandled(res.locals.params.id, res.locals.body.handled);
+    sendSuccess(res, found, { message: found.handledAt ? "Marked as handled" : "Marked as open" });
+  };
+
   updateStatus = async (_req: Request, res: Response) => {
     const shop = await this.platform.updateStatus(res.locals.platformAdmin, res.locals.params.id, res.locals.body);
     sendSuccess(res, shop, { message: `${shop.name}: ${BUSINESS_STATUS_LABELS[shop.status]}` });

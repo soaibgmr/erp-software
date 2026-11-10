@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate, Outlet, useLocation } from "react-router
 import { Loader2 } from "lucide-react";
 import { useAuth } from "./auth";
 import { AppShell } from "./AppShell";
+import { RouteError } from "./RouteError";
 import { ALL_NAV_ITEMS } from "./nav";
 import { Button } from "@/components/ui/Button";
 import { ErrorBanner } from "@/components/ui/States";
@@ -9,6 +10,7 @@ import { LoginPage } from "@/features/auth/LoginPage";
 import { RegisterPage } from "@/features/auth/RegisterPage";
 import { ForgotPasswordPage, ResetPasswordPage, VerifyEmailPage } from "@/features/auth/PasswordPages";
 import { PlatformShell, PlatformShopsPage } from "@/features/platform/PlatformPages";
+import { PlatformDemoRequestsPage } from "@/features/platform/DemoRequestsPage";
 import { CustomersPage } from "@/features/customers/CustomersPage";
 import { CustomerFormPage } from "@/features/customers/CustomerFormPage";
 import { CustomerDetailPage } from "@/features/customers/CustomerDetailPage";
@@ -17,6 +19,8 @@ import { ReportViewerPage } from "@/features/reports/ReportViewerPage";
 import { ComponentGallery } from "@/features/dev/ComponentGallery";
 import { ComingSoonPage, NotFoundPage } from "@/features/home/ComingSoonPage";
 import { DashboardPage } from "@/features/home/DashboardPage";
+import { LandingPage } from "@/features/home/LandingPage";
+import { HelpPage } from "@/features/help/HelpPage";
 import { AdjustmentDetailPage } from "@/features/inventory/pages/AdjustmentDetailPage";
 import { AdjustmentFormPage } from "@/features/inventory/pages/AdjustmentFormPage";
 import { AdjustmentsPage } from "@/features/inventory/pages/AdjustmentsPage";
@@ -55,6 +59,8 @@ import type { Permission } from "@erp-software/shared";
 function RequireAuth() {
   const { status, error, logout } = useAuth();
   const location = useLocation();
+  // Visitors who aren't signed in see the public landing page at "/"; any other page asks them to log in.
+  if (status === "signed-out" && location.pathname === "/") return <LandingPage />;
   if (status === "signed-out")
     return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
   if (status === "loading") {
@@ -108,177 +114,185 @@ const comingSoon = ALL_NAV_ITEMS.filter((i) => i.phase).map((i) => ({
 }));
 
 export const router = createBrowserRouter([
-  // Public pages: log in, shop sign-up, password reset and the links from emails.
-  { path: "/login", element: <LoginPage /> },
-  { path: "/register", element: <RegisterPage /> },
-  { path: "/forgot-password", element: <ForgotPasswordPage /> },
-  { path: "/reset-password", element: <ResetPasswordPage /> },
-  { path: "/verify-email", element: <VerifyEmailPage /> },
-  // The platform admin's console (approves shops). Signs in on /login; its token is kept apart from shop sessions.
-  // One login page for shops and the platform admin; old links to /admin/login still work.
-  { path: "/admin/login", element: <Navigate to="/login" replace /> },
+  // One error screen for every page: a crash while rendering shows it instead of the router's default.
   {
-    path: "/admin",
-    element: <PlatformShell />,
+    errorElement: <RouteError />,
     children: [
-      { index: true, element: <Navigate to="/admin/shops" replace /> },
-      { path: "shops", element: <PlatformShopsPage /> },
-    ],
-  },
-  {
-    element: <RequireAuth />,
-    children: [
-      // Print views render outside the app shell (no sidebar or top bar on paper).
+      // Public pages: log in, shop sign-up, password reset and the links from emails.
+      { path: "/login", element: <LoginPage /> },
+      { path: "/register", element: <RegisterPage /> },
+      { path: "/forgot-password", element: <ForgotPasswordPage /> },
+      { path: "/reset-password", element: <ResetPasswordPage /> },
+      { path: "/verify-email", element: <VerifyEmailPage /> },
+      // The platform admin's console (approves shops). Signs in on /login; its token is kept apart from shop sessions.
+      // One login page for shops and the platform admin; old links to /admin/login still work.
+      { path: "/admin/login", element: <Navigate to="/login" replace /> },
       {
-        path: "print/labels",
-        element: (
-          <Guard permissions={inventoryView}>
-            <LabelsPrintPage />
-          </Guard>
-        ),
-      },
-      // ?format=a4 (default) | thermal
-      {
-        path: "print/invoice/:id",
-        element: (
-          <Guard permissions={invoiceView}>
-            <InvoicePrintPage />
-          </Guard>
-        ),
-      },
-      {
-        path: "print/credit-note/:id",
-        element: (
-          <Guard permissions={invoiceView}>
-            <CreditNotePrintPage />
-          </Guard>
-        ),
-      },
-      // Full-screen POS with its own header (PRD M5.1).
-      {
-        path: "pos",
-        element: (
-          <Guard permissions={["pos.use"]}>
-            <PosPage />
-          </Guard>
-        ),
-      },
-      {
-        element: <AppShell />,
+        path: "/admin",
+        element: <PlatformShell />,
         children: [
-          { index: true, element: <DashboardPage /> },
+          { index: true, element: <Navigate to="/admin/shops" replace /> },
+          { path: "shops", element: <PlatformShopsPage /> },
+          { path: "demo-requests", element: <PlatformDemoRequestsPage /> },
+        ],
+      },
+      {
+        element: <RequireAuth />,
+        children: [
+          // Print views render outside the app shell (no sidebar or top bar on paper).
           {
-            path: "customers",
-            children: [
-              {
-                index: true,
-                element: (
-                  <Guard permissions={["customer.view", "customer.manage"]}>
-                    <CustomersPage />
-                  </Guard>
-                ),
-              },
-              {
-                path: "new",
-                element: (
-                  <Guard permissions={["customer.manage"]}>
-                    <CustomerFormPage />
-                  </Guard>
-                ),
-              },
-              {
-                path: ":id",
-                element: (
-                  <Guard permissions={["customer.view", "customer.manage"]}>
-                    <CustomerDetailPage />
-                  </Guard>
-                ),
-              },
-              {
-                path: ":id/edit",
-                element: (
-                  <Guard permissions={["customer.manage"]}>
-                    <CustomerFormPage />
-                  </Guard>
-                ),
-              },
-            ],
+            path: "print/labels",
+            element: (
+              <Guard permissions={inventoryView}>
+                <LabelsPrintPage />
+              </Guard>
+            ),
+          },
+          // ?format=a4 (default) | thermal
+          {
+            path: "print/invoice/:id",
+            element: (
+              <Guard permissions={invoiceView}>
+                <InvoicePrintPage />
+              </Guard>
+            ),
           },
           {
-            path: "inventory",
-            children: [
-              {
-                index: true,
-                element: (
-                  <Guard permissions={inventoryView}>
-                    <StockPage />
-                  </Guard>
-                ),
-              },
-              guarded("items/new", inventoryManage, <ItemFormPage />),
-              guarded("items/:id", inventoryView, <ItemDetailPage />),
-              guarded("items/:id/edit", inventoryManage, <ItemFormPage />),
-              guarded("import", inventoryManage, <ImportPage />),
-              guarded("adjustments", inventoryView, <AdjustmentsPage />),
-              guarded("adjustments/new", inventoryManage, <AdjustmentFormPage />),
-              guarded("adjustments/:id", inventoryView, <AdjustmentDetailPage />),
-              guarded("transfers", inventoryView, <TransfersPage />),
-              guarded("transfers/new", inventoryManage, <TransferFormPage />),
-              guarded("transfers/:id", inventoryView, <TransferDetailPage />),
-              guarded("labour", inventoryView, <LabourServicesPage />),
-              guarded("masters", inventoryManage, <MastersPage />),
-            ],
+            path: "print/credit-note/:id",
+            element: (
+              <Guard permissions={invoiceView}>
+                <CreditNotePrintPage />
+              </Guard>
+            ),
+          },
+          // Full-screen POS with its own header (PRD M5.1).
+          {
+            path: "pos",
+            element: (
+              <Guard permissions={["pos.use"]}>
+                <PosPage />
+              </Guard>
+            ),
           },
           {
-            path: "invoices",
+            element: <AppShell />,
             children: [
+              { index: true, element: <DashboardPage /> },
               {
-                index: true,
-                element: (
-                  <Guard permissions={invoiceView}>
-                    <InvoicesPage />
-                  </Guard>
-                ),
+                path: "customers",
+                children: [
+                  {
+                    index: true,
+                    element: (
+                      <Guard permissions={["customer.view", "customer.manage"]}>
+                        <CustomersPage />
+                      </Guard>
+                    ),
+                  },
+                  {
+                    path: "new",
+                    element: (
+                      <Guard permissions={["customer.manage"]}>
+                        <CustomerFormPage />
+                      </Guard>
+                    ),
+                  },
+                  {
+                    path: ":id",
+                    element: (
+                      <Guard permissions={["customer.view", "customer.manage"]}>
+                        <CustomerDetailPage />
+                      </Guard>
+                    ),
+                  },
+                  {
+                    path: ":id/edit",
+                    element: (
+                      <Guard permissions={["customer.manage"]}>
+                        <CustomerFormPage />
+                      </Guard>
+                    ),
+                  },
+                ],
               },
-              guarded("credit-notes", invoiceView, <CreditNotesPage />),
-              guarded("credit-notes/:id", invoiceView, <CreditNoteDetailPage />),
-              guarded("shifts", shiftView, <ShiftsPage />),
-              guarded("shifts/:id", shiftView, <ShiftReportPage />),
-              guarded(":id", invoiceView, <InvoiceDetailPage />),
-              guarded(":id/credit-note", ["invoice.cancel"], <CreditNoteFormPage />),
-            ],
-          },
-          {
-            path: "reports",
-            children: [
               {
-                index: true,
-                element: (
-                  <Guard permissions={["report.view"]}>
-                    <ReportsPage />
-                  </Guard>
-                ),
+                path: "inventory",
+                children: [
+                  {
+                    index: true,
+                    element: (
+                      <Guard permissions={inventoryView}>
+                        <StockPage />
+                      </Guard>
+                    ),
+                  },
+                  guarded("items/new", inventoryManage, <ItemFormPage />),
+                  guarded("items/:id", inventoryView, <ItemDetailPage />),
+                  guarded("items/:id/edit", inventoryManage, <ItemFormPage />),
+                  guarded("import", inventoryManage, <ImportPage />),
+                  guarded("adjustments", inventoryView, <AdjustmentsPage />),
+                  guarded("adjustments/new", inventoryManage, <AdjustmentFormPage />),
+                  guarded("adjustments/:id", inventoryView, <AdjustmentDetailPage />),
+                  guarded("transfers", inventoryView, <TransfersPage />),
+                  guarded("transfers/new", inventoryManage, <TransferFormPage />),
+                  guarded("transfers/:id", inventoryView, <TransferDetailPage />),
+                  guarded("labour", inventoryView, <LabourServicesPage />),
+                  guarded("masters", inventoryManage, <MastersPage />),
+                ],
               },
-              guarded(":name", ["report.view"], <ReportViewerPage />),
+              {
+                path: "invoices",
+                children: [
+                  {
+                    index: true,
+                    element: (
+                      <Guard permissions={invoiceView}>
+                        <InvoicesPage />
+                      </Guard>
+                    ),
+                  },
+                  guarded("credit-notes", invoiceView, <CreditNotesPage />),
+                  guarded("credit-notes/:id", invoiceView, <CreditNoteDetailPage />),
+                  guarded("shifts", shiftView, <ShiftsPage />),
+                  guarded("shifts/:id", shiftView, <ShiftReportPage />),
+                  guarded(":id", invoiceView, <InvoiceDetailPage />),
+                  guarded(":id/credit-note", ["invoice.cancel"], <CreditNoteFormPage />),
+                ],
+              },
+              {
+                path: "reports",
+                children: [
+                  {
+                    index: true,
+                    element: (
+                      <Guard permissions={["report.view"]}>
+                        <ReportsPage />
+                      </Guard>
+                    ),
+                  },
+                  guarded(":name", ["report.view"], <ReportViewerPage />),
+                ],
+              },
+              {
+                path: "settings",
+                element: <SettingsLayout />,
+                children: [
+                  settingsTab("business", "settings.manage", <BusinessPage />),
+                  settingsTab("branches", "branch.manage", <BranchesPage />),
+                  settingsTab("users", "user.manage", <UsersPage />),
+                  settingsTab("roles", "role.manage", <RolesPage />),
+                  settingsTab("number-series", "settings.manage", <NumberSeriesPage />),
+                  settingsTab("billing", "settings.manage", <BillingSettingsPage />),
+                  settingsTab("audit", "audit.view", <AuditLogPage />),
+                ],
+              },
+              { path: "profile", element: <ProfilePage /> },
+              { path: "help", element: <HelpPage /> },
+              { path: "dev/components", element: <ComponentGallery /> },
+              ...comingSoon,
+              { path: "*", element: <NotFoundPage /> },
             ],
           },
-          {
-            path: "settings",
-            element: <SettingsLayout />,
-            children: [
-              settingsTab("business", "settings.manage", <BusinessPage />),
-              settingsTab("branches", "branch.manage", <BranchesPage />),
-              settingsTab("users", "user.manage", <UsersPage />),
-              settingsTab("roles", "role.manage", <RolesPage />),
-              settingsTab("number-series", "settings.manage", <NumberSeriesPage />),
-              settingsTab("billing", "settings.manage", <BillingSettingsPage />),
-              settingsTab("audit", "audit.view", <AuditLogPage />),
-            ],
-          },
-          { path: "profile", element: <ProfilePage /> },
-          { path: "dev/components", element: <ComponentGallery /> },
-          ...comingSoon,
-          { path: "*", element: <NotFoundPage /> },
         ],
       },
     ],
