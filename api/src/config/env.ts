@@ -9,8 +9,9 @@ const envSchema = z
 
     // Runtime connection (may point at a pooler such as PgBouncer).
     DATABASE_URL: z.url(),
-    // Direct connection used by the Prisma CLI for migrations.
-    DIRECT_URL: z.url(),
+    // Direct connection used only by the Prisma CLI for migrations (prisma.config.ts reads it from
+    // process.env). The running app never uses it, so serverless hosts like Vercel can leave it unset.
+    DIRECT_URL: z.url().optional(),
 
     DB_POOL_MAX: z.coerce.number().int().positive().default(10),
     DB_IDLE_TIMEOUT_MS: z.coerce.number().int().nonnegative().default(30_000),
