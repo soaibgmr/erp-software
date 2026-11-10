@@ -27,7 +27,7 @@ npm run db:seed      # idempotent admin seed via src/prisma/seed.ts (needs SEED_
 npm run db:studio
 ```
 
-`npm test` runs Vitest (`vitest.config.mts` supplies a test env; tests use in-memory fakes from `src/test/fakes.ts` and Supertest against routes that answer before any query, so no database is needed). Lint with `npm run lint` (oxlint) from the repo root. `@erp-software/shared` must be built (`npm run build:shared` at the root) before the API typechecks or runs; it is ESM and loaded through Node's `require(esm)`.
+`npm test` runs Vitest (`vitest.config.mts` supplies a test env; tests use in-memory fakes from `src/test/fakes.ts` and Supertest against routes that answer before any query, so no database is needed). Lint with `npm run lint` (oxlint) from the repo root. `@erp-software/shared` must be built (`npm run build:shared` at the root) before the API typechecks or runs; it builds an ESM `dist/index.js` (used by the UI) plus a CommonJS bundle `dist/index.cjs` (picked by the API's `require` through the `exports` map, because Vercel's Node runtime does not support `require(esm)`). `npm run dev -w @erp-software/shared` only rebuilds the ESM output, so run `npm run build:shared` after editing shared.
 
 In Prisma 7, `db:migrate` does **not** regenerate the client after a schema change. Run `npm run db:generate` afterwards. VS Code keeps the old types until its TS server restarts, so editor errors can be stale while `tsc` passes.
 

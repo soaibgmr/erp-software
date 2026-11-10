@@ -4,17 +4,20 @@
   "private": true,
   "description": "Schemas, permissions, GST and money helpers shared by the API and the UI",
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "require": "./dist/index.cjs",
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && esbuild src/index.ts --bundle --platform=node --format=cjs --target=node22 --external:zod --outfile=dist/index.cjs --log-level=warning",
     "dev": "tsc -p tsconfig.build.json --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
@@ -25,6 +28,8 @@
   "devDependencies": {
     "typescript": "^7.0.2",
     "vitest": "^5.1.0",
-    "zod": "^4.6.7"
-  }
+    "zod": "^4.6.7",
+    "esbuild": "0.28.2"
+  },
+  "module": "./dist/index.js"
 }
