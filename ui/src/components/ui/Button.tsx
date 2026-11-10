@@ -22,6 +22,16 @@ const sizes: Record<ButtonSize, string> = {
   lg: "h-12 px-6 text-card gap-2",
 };
 
+// The button look for things that aren't <button>s, e.g. a react-router <Link> styled as a button.
+export function buttonClasses(variant: ButtonVariant = "primary", size: ButtonSize = "md", className?: string) {
+  return cn(
+    "inline-flex shrink-0 items-center justify-center rounded-input font-semibold whitespace-nowrap transition-colors disabled:cursor-not-allowed",
+    variants[variant],
+    sizes[size],
+    className,
+  );
+}
+
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
@@ -51,12 +61,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       type={type}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-input font-semibold whitespace-nowrap transition-colors disabled:cursor-not-allowed",
-        variants[variant],
-        sizes[size],
-        className,
-      )}
+      className={buttonClasses(variant, size, className)}
       {...props}
     >
       {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : icon}

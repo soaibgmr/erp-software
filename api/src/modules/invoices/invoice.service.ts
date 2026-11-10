@@ -115,6 +115,14 @@ export class InvoiceService implements IInvoiceService {
     await this.uow.run(async (tx) => {
       const inv = await this.invoices.lockInvoice(tx, id);
       if (!inv || inv.status === "CANCELLED") throw conflict(`${before.number} is already cancelled`);
+      // Re-check under the row lock: a credit note or payment may have been saved since `before` was read,
+      // and the stock/refund amounts below would then be wrong.
+      if (inv.creditedTotal > 0)
+        throw conflict(
+          `${before.number} has credit notes; return the remaining items with another credit note instead`,
+        );
+      if (before.kind === "OPENING_BALANCE" && inv.paidTotal > 0)
+        throw conflict(`${before.number} has payments; reverse them before cancelling these old dues`);
 
       // Stock comes back through new ledger rows; the sale rows stay.
       await this.stock.post(

@@ -6,7 +6,10 @@ import { AuthProvider } from "./app/auth";
 import { router } from "./app/router";
 import { ToastProvider } from "./components/ui/Toast";
 import { ApiError } from "./lib/api-client";
+import { initMonitoring } from "./lib/monitoring";
 import "./styles/index.css";
+
+initMonitoring();
 
 const queryClient = new QueryClient({
   defaultOptions: {

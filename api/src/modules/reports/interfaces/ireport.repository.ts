@@ -33,7 +33,7 @@ export interface IReportRepository {
   gstInvoiceRates(branchIds: string[], p: Period): Promise<GstInvoiceRateRow[]>;
   gstCreditNoteRates(branchIds: string[], p: Period): Promise<GstCreditNoteRateRow[]>;
   // Sales minus credit notes per HSN/SAC, kind, unit and rate.
-  hsnSummary(branchIds: string[], p: Period): Promise<HsnRow[]>;
+  hsnSummary(businessId: string, branchIds: string[], p: Period): Promise<HsnRow[]>;
   openInvoices(branchIds: string[], timeZone: string): Promise<OpenDocumentRow[]>;
   stockValuation(branchIds: string[]): Promise<StockValuationRow[]>;
   stockMovement(branchIds: string[], p: Period): Promise<StockMovementRow[]>;

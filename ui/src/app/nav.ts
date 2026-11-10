@@ -1,4 +1,14 @@
-import { BarChart3, FileText, LayoutGrid, Monitor, Package, Settings, Users, type LucideIcon } from "lucide-react";
+import {
+  BarChart3,
+  CircleHelp,
+  FileText,
+  LayoutGrid,
+  Monitor,
+  Package,
+  Settings,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import type { Permission } from "@erp-software/shared";
 
 export interface NavItem {
@@ -60,6 +70,8 @@ export const NAV: { section: string; items: NavItem[] }[] = [
         icon: Settings,
         permissions: ["settings.manage", "branch.manage", "user.manage", "role.manage", "audit.view"],
       },
+      // Everyone can read the manual.
+      { label: "Help", to: "/help", icon: CircleHelp, description: "How to bill, collect dues, manage stock and more" },
     ],
   },
 ];

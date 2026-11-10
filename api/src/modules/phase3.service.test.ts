@@ -1,18 +1,19 @@
 import "reflect-metadata";
 import { describe, expect, it } from "vitest";
 import bcrypt from "bcryptjs";
-import { defaultSettings, type SettingsGroup } from "@erp-software/shared";
+import { defaultSettings, placeOfSupplyFor, type SettingsGroup } from "@erp-software/shared";
 import { HttpError } from "../common/http-error";
 import type { Db } from "../common/prisma-types";
 import type { IUnitOfWork } from "../common/unit-of-work";
 import { addDays, endOfDayAfter, startOfDayIn } from "../utils/time";
 import { env } from "../config/env";
-import { authFor, FakeAudit, ids, stub } from "../test/fakes";
+import { authFor, FakeAudit, FakeLimiter, ids, stub } from "../test/fakes";
 import type { IDocumentSequenceService } from "./document-sequences/interfaces/idocument-sequence.service";
 import type { IInvoiceRepository } from "./invoices/interfaces/iinvoice.repository";
 import type { ICartPricer, IInvoiceMailer, IInvoiceService } from "./invoices/interfaces/iinvoice.service";
 import { invoiceMail } from "./mail/mail.templates";
 import { InvoicePostingService } from "./invoices/invoice-posting.service";
+import { InvoiceService } from "./invoices/invoice.service";
 import { creditLineAmounts, deriveStatus, roundToRupee } from "./invoices/invoice.rules";
 import type {
   CreateInvoiceData,
@@ -40,6 +41,13 @@ async function expectHttp(promise: Promise<unknown>, status: number, code?: stri
 }
 
 describe("invoice rules", () => {
+  it("place of supply: GSTIN state for registered buyers, the branch's state for counter sales", () => {
+    expect(placeOfSupplyFor("32", "29ABCDE1234F1Z5")).toBe("29");
+    // A walk-in whose address is in Karnataka still pays CGST + SGST at a Kerala counter.
+    expect(placeOfSupplyFor("32", null)).toBe("32");
+    expect(placeOfSupplyFor("32")).toBe("32");
+  });
+
   it("derives status from money", () => {
     expect(deriveStatus(10_000, 0, 10_000)).toBe("PAID");
     expect(deriveStatus(10_000, 0, 4_000)).toBe("PARTIALLY_PAID");
@@ -172,6 +180,7 @@ function priced(
 }
 
 function posting(opts: { price: PricedCartResult; shift?: string | null; managerPassword?: string }) {
+  const limiter = new FakeLimiter();
   const emailed: { invoiceId: string; to: string }[] = [];
   const mailer = stub<IInvoiceMailer>({
     emailInBackground: (_auth, invoiceId, to) => {
@@ -237,8 +246,9 @@ function posting(opts: { price: PricedCartResult; shift?: string | null; manager
     settings,
     new FakeAudit(),
     mailer,
+    limiter,
   );
-  return { svc, created, moves, emailed };
+  return { svc, created, moves, emailed, limiter };
 }
 
 const item = { kind: "ITEM" as const, itemId: "40000000-0000-4000-8000-000000000001", quantity: 2, discount: 0 };
@@ -290,6 +300,22 @@ describe("InvoicePostingService", () => {
     );
     await svc.charge(counter, ids.branchA, { ...body, override: { identifier: "9800000001", password: "secret-1" } });
     expect(created[0]!.discountApprovedById).toBe(ids.manager);
+  });
+
+  it("locks the manager override after repeated wrong passwords", async () => {
+    const { svc } = posting({ price: priced(118_000, { needsDiscountApproval: true }), managerPassword: "secret-1" });
+    const body = { lines: [item], payments: cash(1180) };
+    for (let i = 0; i < 8; i++) {
+      await expectHttp(
+        svc.charge(counter, ids.branchA, { ...body, override: { identifier: "9800000001", password: `guess-${i}` } }),
+        403,
+      );
+    }
+    // Even the right password is refused while locked.
+    await expectHttp(
+      svc.charge(counter, ids.branchA, { ...body, override: { identifier: "9800000001", password: "secret-1" } }),
+      429,
+    );
   });
 
   it("asks for credit approval beyond the customer's limit (₹800 owed + ₹1,180 > ₹1,000)", async () => {
@@ -384,5 +410,51 @@ describe("Bill email", () => {
     expect(mail.html).toContain("Pay later (dues)");
     expect(mail.text).toContain("Oil filter");
     expect(mail.text).toContain("Total: ₹1,180.00");
+  });
+});
+
+describe("InvoiceService.cancel", () => {
+  const detail = {
+    id: "inv-1",
+    number: "INV-26-00001",
+    status: "PAID",
+    kind: "SALE",
+    paidTotal: "1180.00",
+    creditNotes: [],
+    branch: { id: ids.branchA },
+    lines: [{ kind: "ITEM", itemId: "item-1", quantity: "2.000", returnedQty: "0.000" }],
+  } as unknown as InvoiceDetailDto;
+
+  it("refuses when a credit note was saved after the first read (no double restock)", async () => {
+    const moves: StockMovement[][] = [];
+    const uow: IUnitOfWork = { run: (work) => work({} as Db) };
+    const svc = new InvoiceService(
+      uow,
+      stub<IInvoiceRepository>({
+        findDetail: async () => detail,
+        lockInvoice: async () => ({
+          id: "inv-1",
+          number: "INV-26-00001",
+          branchId: ids.branchA,
+          customerId: null,
+          status: "PARTIALLY_RETURNED" as never,
+          grandTotal: 118_000,
+          paidTotal: 118_000,
+          creditedTotal: 59_000,
+          supplyType: "INTRA_STATE",
+        }),
+      }),
+      stub<IStockService>({
+        post: async (_db, _actor, m) => {
+          moves.push(m);
+        },
+      }),
+      stub<IShiftService>({ findOpenId: async () => "shift-1" }),
+      stub({}),
+      stub({}),
+      new FakeAudit(),
+    );
+    await expectHttp(svc.cancel(authFor("manager"), "inv-1", "wrong bill"), 409);
+    expect(moves).toEqual([]);
   });
 });

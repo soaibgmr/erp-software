@@ -1,6 +1,13 @@
 import type { BusinessStatus } from "@prisma/client";
 import type { Paginated } from "../../../common/pagination";
-import type { ListBusinessesQuery, OwnerContact, PlatformAdminDto, PlatformBusinessDto } from "../platform.types";
+import type {
+  DemoRequestDto,
+  ListBusinessesQuery,
+  ListDemoRequestsQuery,
+  OwnerContact,
+  PlatformAdminDto,
+  PlatformBusinessDto,
+} from "../platform.types";
 
 export interface IPlatformRepository {
   findAdminCredentials(email: string): Promise<(PlatformAdminDto & { passwordHash: string }) | null>;
@@ -11,4 +18,13 @@ export interface IPlatformRepository {
   setBusinessStatus(id: string, status: BusinessStatus, note: string | null): Promise<void>;
   // The first active owner of the shop, for status emails.
   findOwnerContact(businessId: string): Promise<OwnerContact | null>;
+  createDemoRequest(data: {
+    name: string | null;
+    mobile: string;
+    email: string | null;
+    ip: string | null;
+  }): Promise<DemoRequestDto>;
+  listDemoRequests(query: ListDemoRequestsQuery): Promise<Paginated<DemoRequestDto>>;
+  /** Marks a request handled (or open again); null when it doesn't exist. */
+  setDemoRequestHandled(id: string, handled: boolean): Promise<DemoRequestDto | null>;
 }

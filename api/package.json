@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "prisma generate && tsc -p tsconfig.build.json",
-    "bundle": "esbuild dist/vercel.js --bundle --platform=node --format=cjs --target=node22 --outfile=dist/bundle/vercel.cjs --external:@prisma/client --external:@prisma/adapter-pg --external:pg --external:pg-native --external:swagger-ui-express --log-level=warning",
+    "bundle": "esbuild dist/vercel.js --bundle --platform=node --format=cjs --target=node22 --outfile=dist/bundle/vercel.cjs --external:@prisma/client --external:@prisma/adapter-pg --external:pg --external:pg-native --external:swagger-ui-express --external:@sentry/node --log-level=warning",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -25,6 +25,7 @@
     "@erp-software/shared": "0.1.0",
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
+    "@sentry/node": "11.11.0",
     "@vercel/functions": "3.10.4",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",

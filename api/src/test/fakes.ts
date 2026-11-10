@@ -1,3 +1,4 @@
+import type { IAttemptLimiter } from "../common/attempt-limiter";
 import { PERMISSIONS, SYSTEM_ROLES, type Permission } from "@erp-software/shared";
 import type { AuthContext } from "../common/auth-context";
 import type { IAuditService } from "../modules/audit/interfaces/iaudit.service";
@@ -99,4 +100,21 @@ export function stub<T extends object>(impl: Partial<T>): T {
       throw new Error(`Unexpected call to ${String(prop)}`);
     },
   }) as T;
+}
+
+// In-memory stand-in for the database-backed attempt counter.
+export class FakeLimiter implements IAttemptLimiter {
+  counts = new Map<string, number>();
+  async hit(key: string) {
+    const count = (this.counts.get(key) ?? 0) + 1;
+    this.counts.set(key, count);
+    return { count, resetAt: new Date(Date.now() + 60_000) };
+  }
+  async count(key: string) {
+    const count = this.counts.get(key) ?? 0;
+    return { count, resetAt: count ? new Date(Date.now() + 60_000) : null };
+  }
+  async reset(key: string) {
+    this.counts.delete(key);
+  }
 }

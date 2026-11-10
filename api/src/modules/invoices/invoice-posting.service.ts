@@ -16,6 +16,7 @@ import { hasPermission, type AuthContext } from "../../common/auth-context";
 import { badRequest, conflict, fieldErrors, HttpError } from "../../common/http-error";
 import { isUniqueViolation } from "../../common/prisma-types";
 import type { IUnitOfWork } from "../../common/unit-of-work";
+import { ACCOUNT_LOCK, assertNotLocked, type IAttemptLimiter } from "../../common/attempt-limiter";
 import type { IAuditService } from "../audit/interfaces/iaudit.service";
 import type { IDocumentSequenceService } from "../document-sequences/interfaces/idocument-sequence.service";
 import type { IHeldCartRepository } from "../pos/interfaces/iheld-cart.repository";
@@ -56,6 +57,7 @@ export class InvoicePostingService implements IInvoicePostingService {
     @inject(TYPES.SettingsService) private readonly settings: ISettingsService,
     @inject(TYPES.AuditService) private readonly audit: IAuditService,
     @inject(TYPES.InvoiceMailer) private readonly mailer: IInvoiceMailer,
+    @inject(TYPES.AttemptLimiter) private readonly limiter: IAttemptLimiter,
   ) {}
 
   async charge(auth: AuthContext, branchId: string, input: CreateInvoiceDto, idempotencyKey?: string) {
@@ -202,7 +204,8 @@ export class InvoicePostingService implements IInvoicePostingService {
         }
 
         await this.invoices.addOutboxEvent(tx, auth.businessId, "InvoicePosted", { invoiceId: id, number, branchId });
-        if (input.heldCartId) await this.heldCarts.softDelete(input.heldCartId, tx);
+        // Scoped to the charging branch (already access-checked), so a cart id from elsewhere does nothing.
+        if (input.heldCartId) await this.heldCarts.softDelete(input.heldCartId, branchId, tx);
         if (idempotencyKey) {
           await this.invoices.saveIdempotency(tx, {
             userId: auth.userId,
@@ -276,6 +279,13 @@ export class InvoicePostingService implements IInvoicePostingService {
       .join(" and ");
     if (!override) throw approvalRequired(`A manager must approve ${what}`, approvals);
 
+    // The counter can't use this box to guess passwords: wrong tries are counted per manager account and
+    // per cashier, and every failure gives the same answer, so a right password with no rights isn't revealed.
+    const accountKey = `override:${override.identifier.trim().toLowerCase()}`;
+    const cashierKey = `override-by:${auth.userId}`;
+    await assertNotLocked(this.limiter, accountKey);
+    await assertNotLocked(this.limiter, cashierKey);
+
     const creds = await this.users.findCredentialsByIdentifier(override.identifier);
     const valid =
       creds &&
@@ -283,14 +293,20 @@ export class InvoicePostingService implements IInvoicePostingService {
       // Only a manager of this shop can approve.
       creds.businessId === auth.businessId &&
       (await bcrypt.compare(override.password, creds.passwordHash));
-    if (!valid) throw approvalRequired("Manager mobile number or password is wrong", approvals);
-
-    const manager = await this.users.findAuthUser(creds.id);
+    const manager = valid ? await this.users.findAuthUser(creds.id) : null;
     const isOwner = manager?.role.key === "OWNER";
     const allowed =
       manager &&
       (isOwner || (needed.every((p) => manager.role.permissions.includes(p)) && manager.branchIds.includes(branchId)));
-    if (!allowed) throw approvalRequired(`That account can't approve ${what} in this branch`, approvals);
+    if (!valid || !allowed) {
+      await this.limiter.hit(accountKey, ACCOUNT_LOCK.windowMs);
+      await this.limiter.hit(cashierKey, ACCOUNT_LOCK.windowMs);
+      throw approvalRequired(
+        `Wrong mobile number or password, or that account can't approve ${what} in this branch`,
+        approvals,
+      );
+    }
+    await this.limiter.reset(accountKey);
     if (creds.id === auth.userId) throw badRequest("Ask another manager to approve");
     return creds.id;
   }

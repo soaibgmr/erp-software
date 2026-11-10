@@ -42,7 +42,7 @@ export class PosService implements IPosService {
   }
 
   async removeHeld(auth: AuthContext, id: string): Promise<void> {
-    await this.getHeld(auth, id);
-    await this.heldCarts.softDelete(id);
+    const cart = await this.getHeld(auth, id);
+    await this.heldCarts.softDelete(id, cart.branchId);
   }
 }

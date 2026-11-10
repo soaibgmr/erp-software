@@ -2,7 +2,7 @@ import { useCallback, useSyncExternalStore } from "react";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { BusinessStatus, BusinessStatusUpdate } from "@erp-software/shared";
 import { api } from "@/lib/api-client";
-import type { PlatformAdmin, PlatformBusiness } from "@/lib/types";
+import type { DemoRequest, PlatformAdmin, PlatformBusiness } from "@/lib/types";
 
 // The platform admin console keeps its own token, apart from any shop login in the same browser.
 const TOKEN_KEY = "ami.admin.token";
@@ -47,7 +47,13 @@ export const platformKeys = {
   all: ["platform"] as const,
   me: () => [...platformKeys.all, "me"] as const,
   shops: (filter: ShopFilter) => [...platformKeys.all, "shops", filter] as const,
+  demoRequests: (filter: DemoRequestFilter) => [...platformKeys.all, "demo-requests", filter] as const,
 };
+
+export interface DemoRequestFilter {
+  status?: "open" | "handled";
+  page: number;
+}
 
 export interface ShopFilter {
   status?: BusinessStatus;
@@ -95,5 +101,29 @@ export function useUpdateShopStatus(token: string | null) {
     mutationFn: ({ id, ...body }: BusinessStatusUpdate & { id: string }) =>
       api.patch<PlatformBusiness>(`/platform/businesses/${id}/status`, body, { bearer: token }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [...platformKeys.all, "shops"] }),
+  });
+}
+
+export function useDemoRequests(token: string | null, filter: DemoRequestFilter) {
+  return useQuery({
+    queryKey: platformKeys.demoRequests(filter),
+    queryFn: ({ signal }) =>
+      api.list<DemoRequest>(
+        "/platform/demo-requests",
+        { status: filter.status, page: filter.page, limit: 25 },
+        signal,
+        { bearer: token },
+      ),
+    enabled: Boolean(token),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useSetDemoRequestHandled(token: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, handled }: { id: string; handled: boolean }) =>
+      api.patch<DemoRequest>(`/platform/demo-requests/${id}`, { handled }, { bearer: token }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [...platformKeys.all, "demo-requests"] }),
   });
 }

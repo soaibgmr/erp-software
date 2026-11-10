@@ -126,3 +126,29 @@ model PlatformAdmin {
 
   @@map("platform_admins")
 }
+
+// "Book a quick demo" requests from the public landing page, for the platform admin to call back.
+model DemoRequest {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String?   @db.VarChar(100)
+  mobile    String    @db.VarChar(10)
+  email     String?   @db.VarChar(255)
+  ip        String?   @db.VarChar(64)
+  // Set when the platform admin marks the request as handled.
+  handledAt DateTime? @map("handled_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([createdAt])
+  @@map("demo_requests")
+}
+
+// Shared counters for rate limits and failed-sign-in lockouts. In the database, not memory, so every
+// serverless instance sees the same count. Rows are tiny and expired ones are cleaned up as they are touched.
+model RateLimit {
+  key     String   @id @db.VarChar(255)
+  count   Int
+  resetAt DateTime @map("reset_at") @db.Timestamptz(3)
+
+  @@index([resetAt])
+  @@map("rate_limits")
+}

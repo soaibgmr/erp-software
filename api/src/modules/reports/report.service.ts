@@ -415,7 +415,7 @@ export class ReportService implements IReportService {
     const [invoices, creditNotes, hsn] = await Promise.all([
       this.reports.gstInvoiceRates(scope.branchIds, p),
       this.reports.gstCreditNoteRates(scope.branchIds, p),
-      this.reports.hsnSummary(scope.branchIds, p),
+      this.reports.hsnSummary(scope.businessId, scope.branchIds, p),
     ]);
     return {
       fileName: `GSTR1_${gstin}_${fp}.json`,
@@ -650,7 +650,7 @@ export class ReportService implements IReportService {
   }
 
   private async hsnTable(scope: BranchScope, p: Period, title?: string): Promise<ReportTable> {
-    const rows = await this.reports.hsnSummary(scope.branchIds, p);
+    const rows = await this.reports.hsnSummary(scope.businessId, scope.branchIds, p);
     const columns = [
       col("hsn", "HSN / SAC"),
       col("description", "Description"),

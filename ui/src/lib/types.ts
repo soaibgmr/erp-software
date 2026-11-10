@@ -585,6 +585,16 @@ export interface PlatformAdmin {
   email: string;
 }
 
+// "Book a quick demo" request from the landing page (platform admin console).
+export interface DemoRequest {
+  id: string;
+  name: string | null;
+  mobile: string;
+  email: string | null;
+  handledAt: string | null;
+  createdAt: string;
+}
+
 export interface PlatformBusiness {
   id: string;
   name: string;

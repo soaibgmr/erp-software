@@ -180,9 +180,10 @@ export class ReportRepository implements IReportRepository {
        ORDER BY cn.created_at, cn.number, il.gst_rate`;
   }
 
-  hsnSummary(branchIds: string[], p: Period) {
+  // HSN descriptions are per shop, so the lookup is limited to this business.
+  hsnSummary(businessId: string, branchIds: string[], p: Period) {
     return this.prisma.$queryRaw<HsnRow[]>`
-      SELECT x.hsn, (SELECT h.description FROM hsn_sac_codes h WHERE h.code = x.hsn AND h.deleted_at IS NULL LIMIT 1) AS description,
+      SELECT x.hsn, (SELECT h.description FROM hsn_sac_codes h WHERE h.code = x.hsn AND h.business_id = ${businessId}::uuid AND h.deleted_at IS NULL LIMIT 1) AS description,
              x.kind, x.unit, x.rate::text AS rate, SUM(x.qty)::text AS quantity, SUM(x.taxable)::text AS taxable,
              SUM(x.cgst)::text AS cgst, SUM(x.sgst)::text AS sgst, SUM(x.igst)::text AS igst
         FROM (

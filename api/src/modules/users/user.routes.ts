@@ -4,6 +4,7 @@ import { TYPES } from "../../config/ioc.types";
 import { idParamSchema } from "../../common/schemas";
 import type { AuthMiddleware } from "../../middleware/auth";
 import { rateLimit } from "../../middleware/rate-limit";
+import type { IAttemptLimiter } from "../../common/attempt-limiter";
 import { validate } from "../../middleware/validate";
 import type { UserController } from "./user.controller";
 import { forgotPasswordSchema, registerSchema, resetPasswordSchema, verifyEmailSchema } from "@erp-software/shared";
@@ -26,15 +27,17 @@ const { requireAuth, requirePermission } = container.get<AuthMiddleware>(TYPES.A
 export const authRouter = Router();
 
 const MINUTE = 60_000;
-const loginLimit = rateLimit({ name: "login", windowMs: 15 * MINUTE, max: 20 });
-const accountLimit = rateLimit({ name: "account", windowMs: 60 * MINUTE, max: 10 });
+const limiter = container.get<IAttemptLimiter>(TYPES.AttemptLimiter);
+const loginLimit = rateLimit(limiter, { name: "login", windowMs: 15 * MINUTE, max: 20 });
+const accountLimit = rateLimit(limiter, { name: "account", windowMs: 60 * MINUTE, max: 10 });
+const refreshLimit = rateLimit(limiter, { name: "refresh", windowMs: 15 * MINUTE, max: 120 });
 
 authRouter.post("/register", accountLimit, validate({ body: registerSchema }), controller.register);
 authRouter.post("/login", loginLimit, validate({ body: loginSchema }), controller.login);
 authRouter.post("/forgot-password", accountLimit, validate({ body: forgotPasswordSchema }), controller.forgotPassword);
 authRouter.post("/reset-password", accountLimit, validate({ body: resetPasswordSchema }), controller.resetPassword);
 authRouter.post("/verify-email", accountLimit, validate({ body: verifyEmailSchema }), controller.verifyEmail);
-authRouter.post("/refresh", validate({ body: refreshSchema }), controller.refresh);
+authRouter.post("/refresh", refreshLimit, validate({ body: refreshSchema }), controller.refresh);
 authRouter.post("/logout", validate({ body: refreshSchema }), controller.logout);
 
 export const usersRouter = Router();

@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { describe, expect, it } from "vitest";
 import { HttpError } from "../common/http-error";
-import { authFor, branch, FakeAudit, ids, roles, stub } from "../test/fakes";
+import { authFor, branch, FakeAudit, FakeLimiter, ids, roles, stub } from "../test/fakes";
 import { UserService } from "./users/user.service";
 import { RoleService } from "./roles/role.service";
 import { CustomerService } from "./customers/customer.service";
@@ -69,7 +69,7 @@ function userService(opts: { users?: Record<string, UserResponseDto>; activeOwne
       list.filter((b) => [ids.branchA, ids.branchB].includes(b)).map((b) => branch(b)),
   });
   const businessRepo = stub<IBusinessRepository>({});
-  return new UserService(userRepo, tokens, roleRepo, branchRepo, businessRepo, new FakeAudit());
+  return new UserService(userRepo, tokens, roleRepo, branchRepo, businessRepo, new FakeAudit(), new FakeLimiter());
 }
 
 const newUser = {
@@ -131,6 +131,27 @@ describe("UserService permission rules", () => {
   it("a non-owner can't edit an owner", async () => {
     const svc = userService({ users: { [ids.owner]: userDto(ids.owner, "OWNER") } });
     await expectHttp(svc.update(authFor("manager"), ids.owner, { phone: null }), 403);
+  });
+
+  it("a manager can't edit, reset or delete a user whose role has more permissions", async () => {
+    const strong = "00000000-0000-4000-8000-000000000098";
+    const user = { ...userDto(strong, "COUNTER"), role: { id: "custom-strong-role", key: null, name: "Accounts" } };
+    const svc = userService({ users: { [strong]: user } });
+    await expectHttp(svc.update(authFor("manager"), strong, { email: "mine@evil.co" }), 403);
+    await expectHttp(svc.setPassword(authFor("manager"), strong, "password-2"), 403);
+    await expectHttp(svc.remove(authFor("manager"), strong), 403);
+  });
+
+  it("a manager can't manage a user outside their branches", async () => {
+    const other = "00000000-0000-4000-8000-000000000097";
+    const svc = userService({ users: { [other]: userDto(other, "COUNTER") } });
+    await expectHttp(svc.update(authFor("manager", [ids.branchB]), other, { phone: null }), 403);
+  });
+
+  it("a manager can edit a counter user in their branch", async () => {
+    const other = "00000000-0000-4000-8000-000000000096";
+    const svc = userService({ users: { [other]: userDto(other, "COUNTER") } });
+    await expect(svc.update(authFor("manager"), other, { phone: null })).resolves.toMatchObject({ id: other });
   });
 
   it("you can't delete yourself", async () => {

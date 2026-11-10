@@ -35,8 +35,11 @@ export class HeldCartRepository implements IHeldCartRepository {
     return (await this.toDtos([row]))[0]!;
   }
 
-  async softDelete(id: string, db: Db = this.prisma): Promise<boolean> {
-    const { count } = await db.heldCart.updateMany({ where: { id, deletedAt: null }, data: { deletedAt: new Date() } });
+  async softDelete(id: string, branchId: string, db: Db = this.prisma): Promise<boolean> {
+    const { count } = await db.heldCart.updateMany({
+      where: { id, branchId, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
     return count > 0;
   }
 

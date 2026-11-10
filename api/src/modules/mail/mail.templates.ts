@@ -92,6 +92,22 @@ export function shopRegisteredMail(input: {
   return { subject: `New shop registered: ${input.shopName}`, html, text };
 }
 
+// Sent to the platform admin when someone books a demo on the landing page.
+export function demoRequestMail(input: { name: string | null; mobile: string; email: string | null }): MailContent {
+  const who = input.name ?? input.mobile;
+  const { html, text } = layout({
+    title: `Demo requested by ${who}`,
+    paragraphs: [
+      `Name: ${input.name ?? "(not given)"}`,
+      `Mobile: ${input.mobile}`,
+      `Email: ${input.email ?? "(not given)"}`,
+      "Please call them back to book the demo.",
+    ],
+    button: { label: "Open demo requests", url: link("/admin/demo-requests") },
+  });
+  return { subject: `Demo request: ${who}`, html, text };
+}
+
 // Sent to the owner right after sign-up; also confirms their email address.
 export function shopReceivedMail(input: {
   firstName: string;
