@@ -1,5 +1,5 @@
-// Vercel serverless entry. Vercel runs this plain JS file as one function; it loads the API that
-// `npm run build` compiled into dist/ (we build with our own tsc, Vercel does not compile the TS).
-// api/vercel.json rewrites every path here. Local and other hosts use src/server.ts instead.
-require("reflect-metadata");
-module.exports = require("../dist/app").default;
+// Vercel serverless entry. Vercel runs this plain JS file as one function; it loads the CommonJS
+// bundle that `npm run build && npm run bundle` produced (src/vercel.ts → dist/bundle/vercel.cjs).
+// We compile and bundle ourselves; Vercel does not compile the TS. api/vercel.json rewrites every
+// path here. Local and other long-running hosts use src/server.ts instead.
+module.exports = require("../dist/bundle/vercel.cjs").default;

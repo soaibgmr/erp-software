@@ -2,11 +2,21 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "installCommand": "cd .. && npm ci --include=dev",
-  "buildCommand": "cd .. && npm run build:shared && npm run build -w @erp-software/api",
+  "buildCommand": "cd .. && npm run build:shared && npm run build -w @erp-software/api && npm run bundle -w @erp-software/api",
   "outputDirectory": "public",
-  "regions": ["syd1"],
+  "regions": [
+    "syd1"
+  ],
   "functions": {
-    "api/index.js": { "maxDuration": 60, "includeFiles": "{dist,certs}/**" }
+    "api/index.js": {
+      "maxDuration": 60,
+      "includeFiles": "{dist/bundle,certs}/**"
+    }
   },
-  "rewrites": [{ "source": "/(.*)", "destination": "/api" }]
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/api"
+    }
+  ]
 }
