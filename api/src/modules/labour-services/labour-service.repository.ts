@@ -36,14 +36,15 @@ const toDto = (r: Row): LabourServiceResponseDto => ({
 export class LabourServiceRepository implements ILabourServiceRepository {
   constructor(@inject(TYPES.PrismaClient) private readonly prisma: PrismaClient) {}
 
-  async findById(id: string): Promise<LabourServiceResponseDto | null> {
-    const row = await this.prisma.labourService.findFirst({ where: { id, deletedAt: null }, select });
+  async findById(businessId: string, id: string): Promise<LabourServiceResponseDto | null> {
+    const row = await this.prisma.labourService.findFirst({ where: { id, businessId, deletedAt: null }, select });
     return row && toDto(row);
   }
 
-  findByName(name: string, excludeId?: string) {
+  findByName(businessId: string, name: string, excludeId?: string) {
     return this.prisma.labourService.findFirst({
       where: {
+        businessId,
         deletedAt: null,
         name: { equals: name, mode: "insensitive" },
         ...(excludeId && { id: { not: excludeId } }),
@@ -52,8 +53,12 @@ export class LabourServiceRepository implements ILabourServiceRepository {
     });
   }
 
-  async list({ page, limit, search, isActive }: ListLabourServicesQuery): Promise<Paginated<LabourServiceResponseDto>> {
+  async list(
+    businessId: string,
+    { page, limit, search, isActive }: ListLabourServicesQuery,
+  ): Promise<Paginated<LabourServiceResponseDto>> {
     const where: Prisma.LabourServiceWhereInput = {
+      businessId,
       deletedAt: null,
       isActive,
       ...(search && {
@@ -77,18 +82,18 @@ export class LabourServiceRepository implements ILabourServiceRepository {
     return { data: rows.map(toDto), page, limit, total };
   }
 
-  async create(data: CreateLabourServiceDto): Promise<LabourServiceResponseDto> {
-    return toDto(await this.prisma.labourService.create({ data, select }));
+  async create(businessId: string, data: CreateLabourServiceDto): Promise<LabourServiceResponseDto> {
+    return toDto(await this.prisma.labourService.create({ data: { ...data, businessId }, select }));
   }
 
-  async update(id: string, data: UpdateLabourServiceDto): Promise<LabourServiceResponseDto | null> {
-    const { count } = await this.prisma.labourService.updateMany({ where: { id, deletedAt: null }, data });
-    return count ? this.findById(id) : null;
+  async update(businessId: string, id: string, data: UpdateLabourServiceDto): Promise<LabourServiceResponseDto | null> {
+    const { count } = await this.prisma.labourService.updateMany({ where: { id, businessId, deletedAt: null }, data });
+    return count ? this.findById(businessId, id) : null;
   }
 
-  async softDelete(id: string): Promise<boolean> {
+  async softDelete(businessId: string, id: string): Promise<boolean> {
     const { count } = await this.prisma.labourService.updateMany({
-      where: { id, deletedAt: null },
+      where: { id, businessId, deletedAt: null },
       data: { deletedAt: new Date() },
     });
     return count > 0;

@@ -22,6 +22,8 @@ export const changePasswordSchema = z.object({
 
 const name = z.string().trim().min(1).max(100);
 
+export const setPasswordSchema = z.strictObject({ password: passwordSchema });
+
 export const updateMeSchema = z.strictObject({
   firstName: name.optional(),
   lastName: name.optional(),

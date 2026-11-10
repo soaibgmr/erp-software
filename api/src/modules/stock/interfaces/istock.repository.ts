@@ -24,12 +24,12 @@ export interface IStockRepository {
   findStock(branchId: string, itemId: string): Promise<BranchStockRow | null>;
   upsertSettings(branchId: string, itemId: string, data: UpdateStockSettingsDto, db?: Db): Promise<BranchStockRow>;
 
-  // Non-deleted items by id, for document lines.
-  findLineItems(ids: string[]): Promise<LineItem[]>;
+  // Non-deleted items of the business by id, for document lines.
+  findLineItems(businessId: string, ids: string[]): Promise<LineItem[]>;
   // Item ids that already have ledger rows in the branch (opening stock is only posted once).
   itemsWithHistory(branchId: string, itemIds: string[]): Promise<Set<string>>;
-  findBrandsByNames(names: string[]): Promise<{ id: string; name: string }[]>;
-  findCategoriesByNames(names: string[]): Promise<{ id: string; name: string }[]>;
-  createBrand(db: Db, name: string): Promise<{ id: string; name: string }>;
-  createCategory(db: Db, name: string): Promise<{ id: string; name: string }>;
+  findBrandsByNames(businessId: string, names: string[]): Promise<{ id: string; name: string }[]>;
+  findCategoriesByNames(businessId: string, names: string[]): Promise<{ id: string; name: string }[]>;
+  createBrand(db: Db, businessId: string, name: string): Promise<{ id: string; name: string }>;
+  createCategory(db: Db, businessId: string, name: string): Promise<{ id: string; name: string }>;
 }

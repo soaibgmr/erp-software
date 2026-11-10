@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Permission } from "@erp-software/shared";
-import { api, session, setSessionExpiredHandler } from "@/lib/api-client";
+import { api, session, setBusinessBlockedHandler, setSessionExpiredHandler } from "@/lib/api-client";
 import type { Me } from "@/lib/types";
 
 interface AuthState {
@@ -10,7 +10,10 @@ interface AuthState {
   error: unknown;
   branch: Me["branches"][number] | undefined;
   setBranch: (id: string) => void;
-  login: (email: string, password: string) => Promise<void>;
+  // Mobile number or email.
+  login: (identifier: string, password: string) => Promise<void>;
+  // Why the user was signed out (shop suspended…), shown on the login page.
+  notice: string | null;
   logout: () => Promise<void>;
   can: (...permissions: Permission[]) => boolean;
   refetch: () => void;
@@ -30,6 +33,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [hasToken, setHasToken] = useState(() => Boolean(session.token));
   const [branchId, setBranchId] = useState(() => session.branchId);
+  // Why the session ended (shop suspended…), shown on the login page.
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const signOutLocally = useCallback(() => {
+    session.clear();
+    setBranchId(null);
+    setHasToken(false);
+    queryClient.clear();
+  }, [queryClient]);
 
   const meQuery = useQuery({
     queryKey: meKey,
@@ -41,16 +53,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     enabled: hasToken,
     staleTime: 5 * 60_000,
-    retry: (count, err) => (err as { status?: number }).status !== 401 && count < 2,
+    retry: (count, err) =>
+      (err as { status?: number }).status !== 401 && (err as { status?: number }).status !== 403 && count < 2,
   });
 
-  const signOutLocally = useCallback(() => {
-    session.set(null);
-    setHasToken(false);
-    queryClient.clear();
-  }, [queryClient]);
-
   useEffect(() => setSessionExpiredHandler(signOutLocally), [signOutLocally]);
+
+  // The shop was suspended (or not approved) while someone was signed in: end the session and say why.
+  // Deferred so the cache isn't cleared while the failing query is still settling.
+  useEffect(
+    () =>
+      setBusinessBlockedHandler((message) =>
+        setTimeout(() => {
+          setNotice(message);
+          signOutLocally();
+        }),
+      ),
+    [signOutLocally],
+  );
 
   // The selected branch, falling back to the one the /me fetch stored, then the first available.
   const me = meQuery.data;
@@ -70,12 +90,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const login = useCallback(
-    async (email: string, password: string) => {
+    async (identifier: string, password: string) => {
       const res = await api.post<{ token: string; refreshToken: string }>(
         "/auth/login",
-        { email, password },
+        { identifier, password },
         { auth: false },
       );
+      setNotice(null);
       session.set(res);
       setHasToken(true);
       await queryClient.invalidateQueries({ queryKey: meKey });
@@ -111,11 +132,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       branch,
       setBranch,
       login,
+      notice,
       logout,
       can,
       refetch: () => void meQuery.refetch(),
     }),
-    [me, status, meQuery, branch, setBranch, login, logout, can],
+    [me, status, meQuery, branch, setBranch, login, notice, logout, can],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

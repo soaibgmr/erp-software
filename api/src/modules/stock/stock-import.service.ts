@@ -114,7 +114,12 @@ export class StockImportService implements IStockImportService {
     // 3. Against the database: existing SKUs, barcodes on other items, brands and categories to create.
     const valid = parsed.filter((p) => p.data && !p.report.errors.length);
     const existing = new Map(
-      (await this.items.findBySkus(valid.map((p) => p.data!.sku))).map((i) => [i.sku.toUpperCase(), i]),
+      (
+        await this.items.findBySkus(
+          auth.businessId,
+          valid.map((p) => p.data!.sku),
+        )
+      ).map((i) => [i.sku.toUpperCase(), i]),
     );
     for (const p of valid) {
       const found = existing.get(p.data!.sku);
@@ -124,6 +129,7 @@ export class StockImportService implements IStockImportService {
       }
     }
     const barcodeOwners = await this.items.findBarcodeOwners(
+      auth.businessId,
       valid.flatMap((p) => (p.data!.barcode ? [p.data!.barcode] : [])),
     );
     for (const owner of barcodeOwners) {
@@ -137,8 +143,8 @@ export class StockImportService implements IStockImportService {
     const brandNames = uniqueCi(valid.flatMap((p) => (p.data!.brand ? [p.data!.brand] : [])));
     const categoryNames = uniqueCi(valid.flatMap((p) => (p.data!.category ? [p.data!.category] : [])));
     const [brands, categories] = await Promise.all([
-      brandNames.length ? this.stockRepo.findBrandsByNames(brandNames) : [],
-      categoryNames.length ? this.stockRepo.findCategoriesByNames(categoryNames) : [],
+      brandNames.length ? this.stockRepo.findBrandsByNames(auth.businessId, brandNames) : [],
+      categoryNames.length ? this.stockRepo.findCategoriesByNames(auth.businessId, categoryNames) : [],
     ]);
     const brandIds = new Map(brands.map((b) => [b.name.toLowerCase(), b.id]));
     const categoryIds = new Map(categories.map((c) => [c.name.toLowerCase(), c.id]));
@@ -183,9 +189,10 @@ export class StockImportService implements IStockImportService {
 
     await this.uow.run(
       async (tx) => {
-        for (const name of newBrands) brandIds.set(name.toLowerCase(), (await this.stockRepo.createBrand(tx, name)).id);
+        for (const name of newBrands)
+          brandIds.set(name.toLowerCase(), (await this.stockRepo.createBrand(tx, auth.businessId, name)).id);
         for (const name of newCategories)
-          categoryIds.set(name.toLowerCase(), (await this.stockRepo.createCategory(tx, name)).id);
+          categoryIds.set(name.toLowerCase(), (await this.stockRepo.createCategory(tx, auth.businessId, name)).id);
 
         const movements: StockMovement[] = [];
         const settings: { itemId: string; minLevel: number; reorderQty: number; binLocation: string | null }[] = [];
@@ -208,12 +215,13 @@ export class StockImportService implements IStockImportService {
           if (p.report.action === "create") {
             itemId = (
               await this.items.create(
+                auth.businessId,
                 { ...master, sku: d.sku, barcodes: d.barcode ? [d.barcode] : [], createdById: auth.userId },
                 tx,
               )
             ).id;
           } else if (p.report.action === "update") {
-            await this.items.update(itemId!, master, tx);
+            await this.items.update(auth.businessId, itemId!, master, tx);
           }
           if (p.report.openingQty) {
             movements.push({

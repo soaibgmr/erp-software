@@ -44,6 +44,22 @@ const envSchema = z
       ),
 
     LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
+
+    // Public URL of the UI; links in emails (verify email, reset password) point here.
+    APP_URL: z.url().default("http://localhost:5173"),
+    // Product name shown in emails.
+    APP_NAME: z.string().default("ERP Software"),
+
+    // Email (SMTP: Brevo, Zoho, Gmail, Amazon SES…). Without SMTP_HOST, emails are written to the log instead.
+    SMTP_HOST: z.string().optional(),
+    SMTP_PORT: z.coerce.number().int().positive().default(587),
+    // true for port 465 (implicit TLS); STARTTLS is used on 587 either way.
+    SMTP_SECURE: z.stringbool().default(false),
+    SMTP_USER: z.string().optional(),
+    SMTP_PASS: z.string().optional(),
+    MAIL_FROM: z.string().default("ERP Software <no-reply@example.com>"),
+    // Where "new shop registered" notices go (the platform admin). Optional.
+    PLATFORM_ADMIN_NOTIFY_EMAIL: z.email().optional(),
   })
   .refine((e) => e.NODE_ENV !== "production" || e.CLIENT_ID, {
     message: "CLIENT_ID is required in production",

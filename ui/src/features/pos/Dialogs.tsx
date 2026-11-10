@@ -5,7 +5,7 @@ import { formatINR, PAYMENT_METHOD_LABELS, POS_PAYMENT_METHODS, type PaymentMeth
 import { useAuth } from "@/app/auth";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Field, Input, Select, Textarea } from "@/components/ui/Field";
+import { Field, Input, PasswordInput, Select, Textarea } from "@/components/ui/Field";
 import { ConfirmDialog, Modal } from "@/components/ui/Modal";
 import { EmptyState, ErrorBanner, Skeleton } from "@/components/ui/States";
 import { useToast } from "@/components/ui/Toast";
@@ -295,9 +295,9 @@ export function OverrideDialog({
   approvals: string[];
   busy: boolean;
   onClose: () => void;
-  onSubmit: (override: { email: string; password: string }) => void;
+  onSubmit: (override: { identifier: string; password: string }) => void;
 }) {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const what = approvals
     .map((a) => (a === "discount" ? "the discount" : "dues above the customer's limit"))
@@ -308,7 +308,7 @@ export function OverrideDialog({
         className="space-y-4"
         onSubmit={(e) => {
           e.preventDefault();
-          onSubmit({ email, password });
+          onSubmit({ identifier: identifier.trim(), password });
           setPassword("");
         }}
       >
@@ -319,34 +319,28 @@ export function OverrideDialog({
             invoice.
           </span>
         </p>
-        <Field label="Manager email">
+        <Field label="Manager's mobile number">
           {(p) => (
             <Input
               {...p}
-              type="email"
+              inputMode="tel"
               autoComplete="off"
               autoFocus
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
             />
           )}
         </Field>
         <Field label="Password">
           {(p) => (
-            <Input
-              {...p}
-              type="password"
-              autoComplete="off"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <PasswordInput {...p} autoComplete="off" value={password} onChange={(e) => setPassword(e.target.value)} />
           )}
         </Field>
         <div className="flex justify-end gap-3">
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" disabled={!email || !password} loading={busy} loadingText="Checking…">
+          <Button type="submit" disabled={!identifier || !password} loading={busy} loadingText="Checking…">
             Approve and charge
           </Button>
         </div>

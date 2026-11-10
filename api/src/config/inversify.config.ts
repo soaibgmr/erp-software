@@ -13,6 +13,18 @@ import type { IUserService } from "../modules/users/interfaces/iuser.service";
 import { UserRepository } from "../modules/users/user.repository";
 import { RefreshTokenRepository } from "../modules/users/refresh-token.repository";
 import { UserService } from "../modules/users/user.service";
+import type { IAuthTokenRepository } from "../modules/users/interfaces/iauth-token.repository";
+import type { IAccountService } from "../modules/users/interfaces/iaccount.service";
+import { AuthTokenRepository } from "../modules/users/auth-token.repository";
+import { AccountService } from "../modules/users/account.service";
+import type { IMailService } from "../modules/mail/interfaces/imail.service";
+import { MailService } from "../modules/mail/mail.service";
+import type { IPlatformRepository } from "../modules/platform/interfaces/iplatform.repository";
+import type { IPlatformService } from "../modules/platform/interfaces/iplatform.service";
+import { PlatformRepository } from "../modules/platform/platform.repository";
+import { PlatformService } from "../modules/platform/platform.service";
+import { PlatformController } from "../modules/platform/platform.controller";
+import { PlatformAuthMiddleware } from "../middleware/platform-auth";
 import { UserController } from "../modules/users/user.controller";
 
 // Roles
@@ -124,6 +136,7 @@ import type { IInvoiceRepository } from "../modules/invoices/interfaces/iinvoice
 import type {
   ICartPricer,
   ICreditNoteService,
+  IInvoiceMailer,
   IInvoicePostingService,
   IInvoiceService,
   IOpeningBalanceService,
@@ -133,6 +146,7 @@ import { InvoiceRepository } from "../modules/invoices/invoice.repository";
 import { CartPricer } from "../modules/invoices/cart-pricer.service";
 import { InvoiceService } from "../modules/invoices/invoice.service";
 import { InvoicePostingService } from "../modules/invoices/invoice-posting.service";
+import { InvoiceMailer } from "../modules/invoices/invoice-mailer.service";
 import { PaymentService } from "../modules/invoices/payment.service";
 import { OpeningBalanceService } from "../modules/invoices/opening-balance.service";
 import { CreditNoteService } from "../modules/invoices/credit-note.service";
@@ -182,6 +196,13 @@ container.bind<IInvoiceRepository>(TYPES.InvoiceRepository).to(InvoiceRepository
 
 // Services
 container.bind<IUserService>(TYPES.UserService).to(UserService).inSingletonScope();
+container.bind<IAuthTokenRepository>(TYPES.AuthTokenRepository).to(AuthTokenRepository).inSingletonScope();
+container.bind<IAccountService>(TYPES.AccountService).to(AccountService).inSingletonScope();
+container.bind<IMailService>(TYPES.MailService).to(MailService).inSingletonScope();
+container.bind<IPlatformRepository>(TYPES.PlatformRepository).to(PlatformRepository).inSingletonScope();
+container.bind<IPlatformService>(TYPES.PlatformService).to(PlatformService).inSingletonScope();
+container.bind<PlatformController>(TYPES.PlatformController).to(PlatformController).inSingletonScope();
+container.bind<PlatformAuthMiddleware>(TYPES.PlatformAuthMiddleware).to(PlatformAuthMiddleware).inSingletonScope();
 container.bind<IRoleService>(TYPES.RoleService).to(RoleService).inSingletonScope();
 container.bind<IBranchService>(TYPES.BranchService).to(BranchService).inSingletonScope();
 container.bind<IBusinessService>(TYPES.BusinessService).to(BusinessService).inSingletonScope();
@@ -201,6 +222,7 @@ container.bind<ICartPricer>(TYPES.CartPricer).to(CartPricer).inSingletonScope();
 container.bind<IPosService>(TYPES.PosService).to(PosService).inSingletonScope();
 container.bind<IInvoiceService>(TYPES.InvoiceService).to(InvoiceService).inSingletonScope();
 container.bind<IInvoicePostingService>(TYPES.InvoicePostingService).to(InvoicePostingService).inSingletonScope();
+container.bind<IInvoiceMailer>(TYPES.InvoiceMailer).to(InvoiceMailer).inSingletonScope();
 container.bind<IPaymentService>(TYPES.PaymentService).to(PaymentService).inSingletonScope();
 container.bind<IOpeningBalanceService>(TYPES.OpeningBalanceService).to(OpeningBalanceService).inSingletonScope();
 container.bind<ICreditNoteService>(TYPES.CreditNoteService).to(CreditNoteService).inSingletonScope();

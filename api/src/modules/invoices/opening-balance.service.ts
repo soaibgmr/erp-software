@@ -38,8 +38,8 @@ export class OpeningBalanceService implements IOpeningBalanceService {
     if (input.asOfDate > todayIn(tz)) throw fieldErrors([{ path: "asOfDate", message: "Can't be a future date" }]);
 
     const [customer, branch] = await Promise.all([
-      this.customers.findById(input.customerId),
-      this.branches.findById(branchId),
+      this.customers.findById(auth.businessId, input.customerId),
+      this.branches.findById(auth.businessId, branchId),
     ]);
     if (!customer) throw fieldErrors([{ path: "customerId", message: "Customer not found" }]);
     if (!branch) throw notFound("Branch not found");

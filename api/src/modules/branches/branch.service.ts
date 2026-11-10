@@ -14,30 +14,31 @@ export class BranchService implements IBranchService {
     @inject(TYPES.AuditService) private readonly audit: IAuditService,
   ) {}
 
-  // Owners see every branch; everyone else only the branches they're assigned to.
+  // Owners see every branch of their business; everyone else only the branches they're assigned to.
   list(auth: AuthContext, query: ListBranchesQuery): Promise<BranchResponseDto[]> {
-    return this.branches.list({ ...query, ids: auth.isOwner ? undefined : auth.branchIds });
+    return this.branches.list(auth.businessId, { ...query, ids: auth.isOwner ? undefined : auth.branchIds });
   }
 
   async getById(auth: AuthContext, id: string): Promise<BranchResponseDto> {
     if (!canAccessBranch(auth, id)) throw forbidden("You don't have access to this branch");
-    const branch = await this.branches.findById(id);
+    const branch = await this.branches.findById(auth.businessId, id);
     if (!branch) throw notFound("Branch not found");
     return branch;
   }
 
   async create(auth: AuthContext, input: CreateBranchDto): Promise<BranchResponseDto> {
-    if (await this.branches.existsByCode(input.code)) throw conflict(`Branch code ${input.code} is already used`);
-    const branch = await this.branches.create(input);
+    if (await this.branches.existsByCode(auth.businessId, input.code))
+      throw conflict(`Branch code ${input.code} is already used`);
+    const branch = await this.branches.create(auth.businessId, input);
     await this.audit.record(auth, { action: "branch.create", entity: "Branch", entityId: branch.id, after: branch });
     return branch;
   }
 
   async update(auth: AuthContext, id: string, input: UpdateBranchDto): Promise<BranchResponseDto> {
-    const before = await this.branches.findById(id);
+    const before = await this.branches.findById(auth.businessId, id);
     if (!before) throw notFound("Branch not found");
 
-    if (input.code && (await this.branches.existsByCode(input.code, id))) {
+    if (input.code && (await this.branches.existsByCode(auth.businessId, input.code, id))) {
       throw conflict(`Branch code ${input.code} is already used`);
     }
     const gstin = input.gstin === undefined ? before.gstin : input.gstin;
@@ -45,23 +46,23 @@ export class BranchService implements IBranchService {
     if (gstin && gstin.slice(0, 2) !== stateCode) {
       throw fieldErrors([{ path: "stateCode", message: "State must match the GSTIN state code" }]);
     }
-    if (input.isActive === false && before.isActive && (await this.branches.countActive()) <= 1) {
+    if (input.isActive === false && before.isActive && (await this.branches.countActive(auth.businessId)) <= 1) {
       throw badRequest("At least one branch must stay active");
     }
 
-    const branch = await this.branches.update(id, input);
+    const branch = await this.branches.update(auth.businessId, id, input);
     if (!branch) throw notFound("Branch not found");
     await this.audit.record(auth, { action: "branch.update", entity: "Branch", entityId: id, before, after: branch });
     return branch;
   }
 
   async remove(auth: AuthContext, id: string): Promise<void> {
-    const before = await this.branches.findById(id);
+    const before = await this.branches.findById(auth.businessId, id);
     if (!before) throw notFound("Branch not found");
-    if (before.isActive && (await this.branches.countActive()) <= 1) {
+    if (before.isActive && (await this.branches.countActive(auth.businessId)) <= 1) {
       throw badRequest("You cannot delete the only active branch");
     }
-    await this.branches.softDelete(id);
+    await this.branches.softDelete(auth.businessId, id);
     await this.audit.record(auth, { action: "branch.delete", entity: "Branch", entityId: id, before });
   }
 }

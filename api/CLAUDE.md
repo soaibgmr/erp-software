@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The REST API of ERP Software (Express 5, PostgreSQL via Prisma 7). It lives in an npm-workspaces monorepo next to `ui/` (React) and `packages/shared/` (zod schemas, permission catalog, GST/money helpers used by both). Product docs are in `../docs/` (PRD, development plan, design patterns, design system).
 
+Multi-company: see "Multi-company" in the root `CLAUDE.md`. Added for it: `platform` (platform admin, shop approval), `mail` (shared email service), sign-up and password reset in `users` (`account.service.ts`) and `business/provision.ts`.
+
 Phase 1 modules: `users` (auth), `roles`, `branches`, `business`, `settings`, `document-sequences`, `customers`, `audit`, plus `health`.
 Phase 3 modules: `shifts`, `pos` (quote, held carts), `invoices` (charge, list/detail/print, cancel, payments, credit notes).
 Purchasing (Phase 5: `suppliers`, `purchases`, `order-list`) was **removed on 2026-11-10** at the owner's request: no suppliers, purchase orders, goods receipts, supplier bills/payments, debit notes, order list or payables. Stock comes in only through adjustments (e.g. `OPENING_STOCK`), transfers and the CSV import; `items.purchasePrice` is maintained by hand. Old `PURCHASE` / `PURCHASE_RETURN` stock ledger rows stay as history. Don't reintroduce purchase code without asking.
@@ -23,7 +25,7 @@ npm run typecheck    # tsc --noEmit
 npm run db:migrate   # prisma migrate dev (create/apply migrations locally)
 npm run db:deploy    # prisma migrate deploy (production)
 npm run db:generate  # regenerate Prisma client after schema edits
-npm run db:seed      # idempotent admin seed via src/prisma/seed.ts (needs SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD)
+npm run db:seed      # idempotent: platform admin (SEED_PLATFORM_ADMIN_*) + optional demo shop (SEED_ADMIN_*)
 npm run db:studio
 ```
 
@@ -36,7 +38,7 @@ Env files: `.env.local` (local PostgreSQL) overrides `.env` (live Supabase); bot
 - `SWAGGER_ENABLED`: on by default outside production.
 - `APP_TIMEZONE`: an IANA name, default `Asia/Kolkata`, validated at startup.
 
-Migrations: `init` (users + refresh_tokens), then `phase1_masters_rbac`, which replaces `users.role` with `users.role_id` (existing ADMINs become OWNER, others COUNTER), then `phase2_inventory` (enables `pg_trgm`, adds the catalog/item/stock tables and two document types, grants `stock.approve` to Branch manager), then `phase3_pos_invoices`, `remove_job_cards`, the `phase5_*` purchasing migrations, `customer_opening_balance` and `remove_purchasing` (drops every purchasing table, the PO/GRN/DN number series and the `purchase.*` / `supplier.*` permissions). Trigram GIN indexes are declared in `inventory.prisma` with `ops: raw("gin_trgm_ops")`; the extension itself is created in the migration SQL. `npm run db:seed` is idempotent: system roles (fills permissions of roles created empty by the migration), the business row, a MAIN branch and the owner account.
+Migrations: `init` (users + refresh_tokens), then `phase1_masters_rbac`, which replaces `users.role` with `users.role_id` (existing ADMINs become OWNER, others COUNTER), then `phase2_inventory` (enables `pg_trgm`, adds the catalog/item/stock tables and two document types, grants `stock.approve` to Branch manager), then `phase3_pos_invoices`, `remove_job_cards`, the `phase5_*` purchasing migrations, `customer_opening_balance`, `remove_purchasing` (drops every purchasing table, the PO/GRN/DN number series and the `purchase.*` / `supplier.*` permissions) and `multi_company` (adds `business_id` everywhere and backfills it with the one existing business, which becomes ACTIVE; adds `users.mobile`, `auth_tokens` and `platform_admins`; makes branch code, role key/name and settings unique per business). Trigram GIN indexes are declared in `inventory.prisma` with `ops: raw("gin_trgm_ops")`; the extension itself is created in the migration SQL. `npm run db:seed` is idempotent: the platform admin, plus a demo ACTIVE shop (business, roles, MAIN branch, owner) unless its owner email already exists.
 
 ## Architecture
 
@@ -46,7 +48,7 @@ Migrations: `init` (users + refresh_tokens), then `phase1_masters_rbac`, which r
   - `DATABASE_URL` is used at runtime and may point at a pooler like PgBouncer.
   - `DIRECT_URL` is used only by the Prisma CLI, via `prisma.config.ts`, because migrations need a non-pooled connection.
   - Neither URL appears in `schema.prisma`; that is intentional.
-- **Prisma layout:** the schema is split across files in `src/prisma/schema/`. `schema.prisma` holds the generator and datasource, and each domain gets its own `.prisma` file (currently `users.prisma`). Migrations live in `src/prisma/migrations/`. The client is generated into `node_modules` and imported from `@prisma/client`.
+- **Prisma layout:** the schema is split across files in `src/prisma/schema/`. `schema.prisma` holds the generator and datasource, and each domain gets its own `.prisma` file (`organization`, `users`, `customers`, `inventory`, `sales`). Migrations live in `src/prisma/migrations/`. The client is generated into `node_modules` and imported from `@prisma/client`.
 - **DB conventions** (follow these for new models):
   - camelCase fields mapped to snake_case columns with `@map`.
   - Tables mapped to plural snake_case with `@@map`; enums mapped with `@@map` too.
@@ -59,7 +61,7 @@ Migrations: `init` (users + refresh_tokens), then `phase1_masters_rbac`, which r
   - `*.schema.ts` (zod), `*.types.ts` (DTOs: `CreateXDto`, `UpdateXDto`, `XResponseDto`, `ListXQuery`) and `*.docs.ts` (OpenAPI).
   - `interfaces/i<domain>.service.ts` and `interfaces/i<domain>.repository.ts`.
 
-  `src/modules/users/` is the reference implementation. It also owns auth: `user.routes.ts` exports both `authRouter` (register/login/refresh/logout) and `usersRouter`, and there is no separate auth module. Services may inject other modules' repository interfaces.
+  `src/modules/users/` is the reference implementation. It also owns auth: `user.routes.ts` exports both `authRouter` (register/login/refresh/logout/forgot-password/reset-password/verify-email) and `usersRouter`, and there is no separate auth module. Services may inject other modules' repository interfaces.
 - **Registering a module** touches four places:
   - `TYPES` in `src/config/ioc.types.ts`.
   - The bindings in `src/config/inversify.config.ts`.
@@ -105,7 +107,8 @@ Migrations: `init` (users + refresh_tokens), then `phase1_masters_rbac`, which r
 ## POS and invoices
 
 - **Pricing:** `CartPricer` resolves cart lines against items / labour services (master sale price, GST, tax-inclusive flag), picks CGST+SGST or IGST from the customer's state vs the branch's, and prices with `priceCart` from shared (line discount → bill discount apportioned by line → GST per line → rupee round-off). `/pos/quote` and the charge use the same code; the UI prices locally with the same function.
-- **Charge (`POST /invoices`)** needs an open shift for the user in the branch. One transaction: `INVOICE` number → invoice + lines (customer details copied) → `SALE` stock movements → payments → `InvoicePosted` outbox row → idempotency row. Unpaid balance = credit sale (customer required); its `dueDate` is the end of the day `creditDays` after today in `APP_TIMEZONE` (`endOfDayAfter`), so a 0-day bill is not overdue until the day ends. Discount above `pos.maxDiscountPercent` or credit above the customer's limit throws 403 `APPROVAL_REQUIRED` (`details.approvals`) unless the user holds `discount.override` / `credit.override`, or the body carries `override: { email, password }` of a manager who does (verified with bcrypt, recorded on the invoice and audited).
+- **Charge (`POST /invoices`)** needs an open shift for the user in the branch. One transaction: `INVOICE` number → invoice + lines (customer details copied) → `SALE` stock movements → payments → `InvoicePosted` outbox row → idempotency row. Every bill needs a customer (no walk-in bills: the POS starts by finding the customer with `GET /customers/lookup?q=<mobile or email>`, or adds them on the spot); the charge is refused with a `customerId` field error otherwise. Unpaid balance = credit sale; its `dueDate` is the end of the day `creditDays` after today in `APP_TIMEZONE` (`endOfDayAfter`), so a 0-day bill is not overdue until the day ends. Discount above `pos.maxDiscountPercent` or credit above the customer's limit throws 403 `APPROVAL_REQUIRED` (`details.approvals`) unless the user holds `discount.override` / `credit.override`, or the body carries `override: { identifier, password }` of a manager of the same business who does (verified with bcrypt, recorded on the invoice and audited).
+- **Bill email:** after a charge commits, if the customer has an email, `IInvoiceMailer.emailInBackground` sends the bill: HTML body from `invoiceMail` in `mail.templates.ts`, plus the A4 tax invoice as a PDF attachment built by `buildInvoicePdf` (`invoices/invoice-pdf.ts`, pdf-lib with the built-in Helvetica fonts, so "₹" is written "Rs."; it uses the print settings for terms, footer and signature). Sender name = the shop, reply-to = the business email. It runs inside `waitUntil` (`@vercel/functions`) so the counter never waits on SMTP and Vercel keeps the function alive until it is sent; failures are only logged ("Bill email failed").
 - **Idempotency:** the POS sends `Idempotency-Key`; `(userId, key)` stores a hash of the body and the invoice id. Same key + same body → the first invoice (200); different body → 409; a concurrent duplicate hits the primary key and is answered with the winner.
 - **Money after posting** never edits lines. Payments are append-only rows (`kind` null = receipt, `REVERSAL`, `REFUND`; negative amounts). Invoice `paidTotal` / `creditedTotal` / `status` are recomputed under `SELECT … FOR UPDATE` on the invoice row (`lockInvoice`). Cancel returns stock (`SALE_CANCEL`) and refunds by method; refused once a credit note exists. Credit notes (`CREDIT_NOTE` series) credit proportional amounts per returned quantity (the last units take exactly what's left), restock (`SALE_RETURN`) and refund any overpayment.
 - **Old dues (opening balance):** `POST /invoices/opening-balance` (`dues.opening`) saves an invoice with `kind = OPENING_BALANCE` (series `OB`, no lines, zero tax, no shift, dated `asOfDate`, due after the customer's credit days). It counts wherever dues count (customer outstanding, receivables, ageing, overdue, payments) but every sales query filters `i.kind = 'SALE'` (`SALES` in `report.repository.ts`, dashboard sales); new sales queries must do the same. Print and credit notes are refused; cancel only while nothing is paid.
@@ -114,7 +117,7 @@ Migrations: `init` (users + refresh_tokens), then `phase1_masters_rbac`, which r
 ## Dates without time
 
 - `src/common/date-only.ts` holds the `YYYY-MM-DD` helpers (`todayIn(env.APP_TIMEZONE)`, `addDays`, `daysBetween`, `toDateOnly` / `fromDateOnly` for `@db.Date` columns).
-- **Migration order:** name new migrations after the latest folder (currently `20261110120000_remove_purchasing`).
+- **Migration order:** name new migrations after the latest folder (currently `20261111090000_multi_company`).
 
 ## Dashboard and reports
 
@@ -126,16 +129,18 @@ Migrations: `init` (users + refresh_tokens), then `phase1_masters_rbac`, which r
 
 ## Auth and users
 
-- **Accounts:** there is no public registration. Users with `user.manage` create accounts via `/api/v1/users`, assigning a role and branches. Nobody can delete, deactivate or change the role of themselves; at least one active OWNER must remain; non-owners can only assign roles whose permissions they hold, and only their own branches; non-OWNER roles need at least one branch.
+- **Accounts:** shops register themselves (`POST /auth/register`, PENDING until the platform admin approves). Inside a shop, users with `user.manage` create staff via `/api/v1/users` (mobile required, email optional), assigning a role and branches, and can set a new password with `POST /users/:id/password`. Nobody can delete, deactivate or change the role of themselves; at least one active OWNER must remain; non-owners can only assign roles whose permissions they hold, and only their own branches; non-OWNER roles need at least one branch.
 - **Roles & permissions:** a `Role` stores a `permissions text[]` of codes from `packages/shared/src/permissions.ts` (the single catalog; `GET /permissions` serves it). System roles have a `key` (`OWNER`, `BRANCH_MANAGER`, `COUNTER`, …). OWNER bypasses every permission and branch check and its role can't be edited. Routes guard with `requirePermission(...codes)` (any-of).
 - **Branch scope:** `res.locals.auth` carries `isOwner`, `permissions` and `branchIds`. Use `canAccessBranch(auth, id)` in services; `requireBranch` / `optionalBranch` resolve the `x-branch-id` header into `res.locals.branchId`.
 - **Audit:** inject `IAuditService` and call `record(auth, { action, entity, entityId, before, after })` for sensitive changes (pass a transaction client as the third argument inside `$transaction`). Secrets are stripped.
 - **Number series:** `IDocumentSequenceService.next(tx, branchId, docType)` issues gap-free numbers like `INV-26-01874` per branch and financial year (April–March in `APP_TIMEZONE`); call it inside the transaction that creates the document.
-  - The OWNER account comes from the seed.
-- **Login:** the same 401 message comes back for an unknown email, a wrong password or a non-ACTIVE account. Login records `lastLoginAt` and an `auth.login` audit entry. The JWT carries only `sub`; role and permissions are re-read on every request.
-- **Password hash:** repository queries use a `publicUserSelect` whitelist, so `passwordHash` leaves the repository only through `findCredentialsByEmail` / `findCredentialsById`.
+  - The OWNER account comes from sign-up (or the seed's demo shop).
+- **Login:** `{ identifier, password }`, where identifier is a mobile number or an email. The same 401 comes back for an unknown account, a wrong password or a non-ACTIVE user; only with the right password does a non-ACTIVE shop get 403 `BUSINESS_*`. Login records `lastLoginAt` and an `auth.login` audit entry. The JWT carries only `sub`; role, permissions, business and its status are re-read on every request.
+- **Password reset / email confirm:** one-time tokens in `auth_tokens` (SHA-256 hashes; reset 30 min, confirm 48 h; a new link voids older ones). `forgot-password` always returns 200. Rate limits on `/auth/*` are in memory per instance (`middleware/rate-limit.ts`).
+- **POS manager override** is `override: { identifier, password }`, and the manager must belong to the same business.
+- **Password hash:** repository queries use a `publicUserSelect` whitelist, so `passwordHash` leaves the repository only through `findCredentialsByIdentifier` / `findCredentialsById`.
 - **Refresh tokens:**
-  - Register and login return `{ user, token, refreshToken }`.
+  - Login returns `{ user, token, refreshToken }` (register returns no tokens: the shop is pending).
   - Refresh tokens are opaque random strings. Only their SHA-256 hashes are stored, in `refresh_tokens` (`RefreshTokenRepository`).
   - `POST /auth/refresh` rotates the token: it revokes the old one and issues a new pair. Presenting an already-revoked token revokes all of that user's tokens.
   - `POST /auth/logout` revokes the token and always returns 200.

@@ -87,6 +87,7 @@ export interface ListStockQuery {
 }
 
 export interface StockListFilter extends Omit<ListStockQuery, "branchId"> {
+  businessId: string;
   branchIds: string[];
   // Single-branch lists include items never stocked there (zero rows); multi-branch lists don't.
   includeEmpty: boolean;

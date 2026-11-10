@@ -9,11 +9,11 @@ export class LabourServiceController {
   constructor(@inject(TYPES.LabourServiceService) private readonly services: ILabourServiceService) {}
 
   list = async (_req: Request, res: Response) => {
-    sendPaginated(res, await this.services.list(res.locals.query));
+    sendPaginated(res, await this.services.list(res.locals.auth, res.locals.query));
   };
 
   getById = async (_req: Request, res: Response) => {
-    sendSuccess(res, await this.services.getById(res.locals.params.id));
+    sendSuccess(res, await this.services.getById(res.locals.auth, res.locals.params.id));
   };
 
   create = async (_req: Request, res: Response) => {

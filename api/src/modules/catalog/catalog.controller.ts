@@ -13,13 +13,13 @@ export class CatalogController {
   list =
     (kind: CatalogKind): RequestHandler =>
     async (_req, res) => {
-      sendSuccess(res, await this.catalog.list(kind, res.locals.query));
+      sendSuccess(res, await this.catalog.list(res.locals.auth, kind, res.locals.query));
     };
 
   getById =
     (kind: CatalogKind): RequestHandler =>
     async (_req, res) => {
-      sendSuccess(res, await this.catalog.getById(kind, res.locals.params.id));
+      sendSuccess(res, await this.catalog.getById(res.locals.auth, kind, res.locals.params.id));
     };
 
   create =

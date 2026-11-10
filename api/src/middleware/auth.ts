@@ -6,6 +6,7 @@ import { isPermission, type Permission } from "@erp-software/shared";
 import { TYPES } from "../config/ioc.types";
 import { env } from "../config/env";
 import { badRequest, forbidden, unauthorized } from "../common/http-error";
+import { assertBusinessActive, PLATFORM_AUDIENCE } from "../common/tenant";
 import { canAccessBranch, type AuthContext } from "../common/auth-context";
 import type { IUserRepository } from "../modules/users/interfaces/iuser.repository";
 import type { IBranchRepository } from "../modules/branches/interfaces/ibranch.repository";
@@ -29,6 +30,8 @@ export class AuthMiddleware {
     try {
       const payload = jwt.verify(header.slice(7), env.JWT_SECRET);
       if (typeof payload === "string" || !payload.sub) throw new Error("Invalid payload");
+      // Platform-admin tokens never open shop data.
+      if (payload.aud === PLATFORM_AUDIENCE) throw new Error("Wrong audience");
       userId = payload.sub;
     } catch {
       throw unauthorized("Invalid or expired token");
@@ -37,9 +40,11 @@ export class AuthMiddleware {
     // Re-read the user so deactivation, role and branch changes take effect immediately.
     const user = await this.users.findAuthUser(userId);
     if (!user || user.status !== "ACTIVE") throw unauthorized();
+    assertBusinessActive(user.businessStatus);
 
     res.locals.auth = {
       userId: user.id,
+      businessId: user.businessId,
       roleId: user.role.id,
       roleKey: user.role.key,
       isOwner: user.role.key === "OWNER",
@@ -83,7 +88,7 @@ export class AuthMiddleware {
     if (!uuid.safeParse(value).success) throw badRequest(`Invalid ${BRANCH_HEADER} header`);
     if (!canAccessBranch(auth, value)) throw forbidden("You don't have access to this branch");
 
-    const branch = await this.branches.findById(value);
+    const branch = await this.branches.findById(auth.businessId, value);
     if (!branch || !branch.isActive) throw forbidden("Branch not found or inactive");
     return value;
   }

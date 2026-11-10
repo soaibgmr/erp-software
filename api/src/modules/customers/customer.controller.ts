@@ -9,16 +9,16 @@ export class CustomerController {
   constructor(@inject(TYPES.CustomerService) private readonly customerService: ICustomerService) {}
 
   list = async (_req: Request, res: Response) => {
-    sendPaginated(res, await this.customerService.list(res.locals.query));
+    sendPaginated(res, await this.customerService.list(res.locals.auth, res.locals.query));
   };
 
   // 200 with data: null when nobody has this mobile, so the POS can offer "new customer".
   lookup = async (_req: Request, res: Response) => {
-    sendSuccess(res, await this.customerService.lookupByMobile(res.locals.query.mobile));
+    sendSuccess(res, await this.customerService.lookup(res.locals.auth, res.locals.query.q));
   };
 
   getById = async (_req: Request, res: Response) => {
-    sendSuccess(res, await this.customerService.getById(res.locals.params.id));
+    sendSuccess(res, await this.customerService.getById(res.locals.auth, res.locals.params.id));
   };
 
   create = async (_req: Request, res: Response) => {

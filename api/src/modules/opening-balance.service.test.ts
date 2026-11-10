@@ -49,7 +49,7 @@ function service(opts: { customer?: CustomerResponseDto | null } = {}) {
     }),
     stub<IInvoiceService>({ getById: async (_a, id) => ({ id, number: "OB-26-00001" }) as InvoiceDetailDto }),
     stub<ICustomerRepository>({ findById: async () => (opts.customer === undefined ? ramesh : opts.customer) }),
-    stub<IBranchRepository>({ findById: async (id) => branch(id) }),
+    stub<IBranchRepository>({ findById: async (_businessId, id) => branch(id) }),
     stub<IDocumentSequenceService>({
       next: async (_db, _b, type) => {
         series.push(type);

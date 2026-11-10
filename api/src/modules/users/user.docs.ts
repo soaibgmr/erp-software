@@ -1,5 +1,12 @@
 import { UserStatus } from "@prisma/client";
-import { PERMISSIONS } from "@erp-software/shared";
+import {
+  BUSINESS_STATUSES,
+  forgotPasswordSchema,
+  PERMISSIONS,
+  registerSchema,
+  resetPasswordSchema,
+  verifyEmailSchema,
+} from "@erp-software/shared";
 import {
   fromZod,
   operation,
@@ -16,6 +23,7 @@ import {
   listUsersQuerySchema,
   loginSchema,
   refreshSchema,
+  setPasswordSchema,
   updateMeSchema,
   updateUserSchema,
 } from "./user.schema";
@@ -29,12 +37,26 @@ const branchSummary = {
 export const userSchemas: Record<string, SchemaObject> = {
   User: {
     type: "object",
-    required: ["id", "firstName", "lastName", "email", "phone", "status", "role", "branches", "createdAt", "updatedAt"],
+    required: [
+      "id",
+      "firstName",
+      "lastName",
+      "mobile",
+      "email",
+      "phone",
+      "status",
+      "role",
+      "branches",
+      "createdAt",
+      "updatedAt",
+    ],
     properties: {
       id: { type: "string", format: "uuid" },
       firstName: { type: "string" },
       lastName: { type: "string" },
-      email: { type: "string", format: "email" },
+      mobile: { type: ["string", "null"], description: "Login id; unique across every shop." },
+      email: { type: ["string", "null"], format: "email" },
+      emailVerifiedAt: { type: ["string", "null"], format: "date-time" },
       phone: { type: ["string", "null"] },
       status: { type: "string", enum: Object.values(UserStatus) },
       lastLoginAt: { type: ["string", "null"], format: "date-time" },
@@ -55,6 +77,14 @@ export const userSchemas: Record<string, SchemaObject> = {
     type: "object",
     properties: {
       user: ref("User"),
+      business: {
+        type: "object",
+        properties: {
+          id: { type: "string", format: "uuid" },
+          name: { type: "string" },
+          status: { type: "string", enum: [...BUSINESS_STATUSES] },
+        },
+      },
       isOwner: { type: "boolean" },
       permissions: { type: "array", items: { type: "string", enum: [...PERMISSIONS] } },
       branches: {
@@ -90,11 +120,56 @@ const manage = "Requires `user.manage`.";
 const empty = { type: "null" };
 
 export const userPaths: Paths = {
+  "/api/v1/auth/register": {
+    post: operation({
+      tag: auth,
+      summary: "Register a shop",
+      description:
+        "Creates the shop (PENDING), its system roles, a MAIN branch and the owner account, then emails the owner a confirm-email link. " +
+        "The owner can log in once the platform admin approves the shop. Mobile and email must be free across every shop.",
+      auth: "client",
+      body: fromZod(registerSchema),
+      responses: {
+        201: success("Waiting for approval", { type: "object", properties: { status: { const: "PENDING" } } }),
+      },
+    }),
+  },
+  "/api/v1/auth/forgot-password": {
+    post: operation({
+      tag: auth,
+      summary: "Email a password reset link",
+      description: "Always 200. A 30-minute, single-use link goes to the account's email, if it has one.",
+      auth: "client",
+      body: fromZod(forgotPasswordSchema),
+      responses: { 200: success("Sent if possible", empty) },
+    }),
+  },
+  "/api/v1/auth/reset-password": {
+    post: operation({
+      tag: auth,
+      summary: "Set a new password from a reset link",
+      description: "Signs out every session of the user.",
+      auth: "client",
+      body: fromZod(resetPasswordSchema),
+      responses: { 200: success("Password changed", empty) },
+    }),
+  },
+  "/api/v1/auth/verify-email": {
+    post: operation({
+      tag: auth,
+      summary: "Confirm an email address",
+      auth: "client",
+      body: fromZod(verifyEmailSchema),
+      responses: { 200: success("Email confirmed", empty) },
+    }),
+  },
   "/api/v1/auth/login": {
     post: operation({
       tag: auth,
-      summary: "Log in",
-      description: "Unknown email, wrong password and non-ACTIVE accounts all return the same 401.",
+      summary: "Log in with mobile number (or email) and password",
+      description:
+        "Unknown accounts, wrong passwords and inactive users all return the same 401. With the right password, a shop that " +
+        "isn't ACTIVE gets 403 `BUSINESS_PENDING`, `BUSINESS_SUSPENDED` or `BUSINESS_REJECTED`.",
       auth: "client",
       body: fromZod(loginSchema),
       responses: { 200: success("Logged in successfully", ref("AuthResponse")) },
@@ -181,6 +256,16 @@ export const userPaths: Paths = {
       description: `${manage} You can't delete yourself.`,
       parameters: [pathParam("id")],
       responses: { 200: success("User deleted", empty) },
+    }),
+  },
+  "/api/v1/users/{id}/password": {
+    post: operation({
+      tag: admin,
+      summary: "Set a new password for a user",
+      description: `${manage} For staff who can't reset it by email. Signs the user out everywhere. Only owners can change an owner's password.`,
+      parameters: [pathParam("id")],
+      body: fromZod(setPasswordSchema),
+      responses: { 200: success("Password changed", empty) },
     }),
   },
 };

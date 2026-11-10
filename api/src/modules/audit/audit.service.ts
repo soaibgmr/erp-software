@@ -21,6 +21,7 @@ export class AuditService implements IAuditService {
   record(actor: AuditActor, entry: AuditEntry, db?: Db): Promise<void> {
     return this.audit.create(
       {
+        businessId: actor?.businessId ?? null,
         actorId: actor?.userId ?? null,
         branchId: entry.branchId ?? null,
         action: entry.action,
@@ -34,7 +35,7 @@ export class AuditService implements IAuditService {
     );
   }
 
-  list(query: ListAuditLogsQuery): Promise<Paginated<AuditLogResponseDto>> {
-    return this.audit.list(query);
+  list(businessId: string, query: ListAuditLogsQuery): Promise<Paginated<AuditLogResponseDto>> {
+    return this.audit.list(businessId, query);
   }
 }

@@ -9,6 +9,6 @@ export class AuditController {
   constructor(@inject(TYPES.AuditService) private readonly auditService: IAuditService) {}
 
   list = async (_req: Request, res: Response) => {
-    sendPaginated(res, await this.auditService.list(res.locals.query));
+    sendPaginated(res, await this.auditService.list(res.locals.auth.businessId, res.locals.query));
   };
 }

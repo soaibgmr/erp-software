@@ -1,5 +1,5 @@
-import { useEffect, useState, type Ref } from "react";
-import { AlertTriangle, Minus, Percent, Plus, ShoppingCart, Tag, Trash2, UserPlus, UserRound, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AlertTriangle, Minus, Percent, Plus, ShoppingCart, Tag, Trash2, UserRound } from "lucide-react";
 import { formatINR, formatMobile, formatQty, type PricedCart, type SupplyType } from "@erp-software/shared";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -8,11 +8,9 @@ import { Field, Input } from "@/components/ui/Field";
 import { Kbd } from "@/components/ui/Kbd";
 import { Modal } from "@/components/ui/Modal";
 import { EmptyState } from "@/components/ui/States";
-import { useToast } from "@/components/ui/Toast";
 import { useCustomerCredit } from "@/features/invoices/api";
-import { api } from "@/lib/api-client";
-import type { Customer, CustomerCredit } from "@/lib/types";
-import { cn, errorMessage } from "@/lib/utils";
+import type { CustomerCredit } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { lineKey, qtyOf, type CartAction, type CartState } from "./cart";
 
 export type PosMode = "CASH" | "UPI" | "CARD" | "CREDIT";
@@ -44,7 +42,6 @@ export function CartPanel({
   onLineDiscount,
   billDiscountOpen,
   onBillDiscount,
-  customerInput,
 }: {
   cart: CartState;
   dispatch: (a: CartAction) => void;
@@ -63,7 +60,6 @@ export function CartPanel({
   onLineDiscount: (key: string | null) => void;
   billDiscountOpen: boolean;
   onBillDiscount: (open: boolean) => void;
-  customerInput?: Ref<HTMLInputElement>;
 }) {
   const editing = lineDiscountKey;
   const setEditing = onLineDiscount;
@@ -80,18 +76,18 @@ export function CartPanel({
 
   return (
     <aside className="flex min-h-0 flex-col rounded-card border border-border bg-surface" aria-label="Cart">
-      <CustomerBox
-        inputRef={customerInput}
-        customer={cart.customer}
-        onChange={(customer) => dispatch({ type: "setCustomer", customer })}
-      />
+      <CustomerBox customer={cart.customer} onChange={(customer) => dispatch({ type: "setCustomer", customer })} />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {cart.lines.length === 0 ? (
           <EmptyState
             icon={ShoppingCart}
             title="Cart is empty"
-            description="Scan a barcode or tap a product to add it."
+            description={
+              cart.customer
+                ? "Scan a barcode or tap a product to add it."
+                : "First enter the customer's mobile or email above, then add products."
+            }
             className="py-10"
           />
         ) : (
@@ -281,7 +277,7 @@ export function CartPanel({
           variant="accent"
           size="lg"
           className="w-full"
-          disabled={!cart.lines.length || totals.issues.length > 0}
+          disabled={!cart.customer || !cart.lines.length || totals.issues.length > 0}
           loading={charging}
           loadingText="Saving…"
           onClick={onCharge}
@@ -336,105 +332,31 @@ function CreditLine({ customer }: { customer: CustomerCredit }) {
 }
 
 // ---------- Customer ----------
+// Who the bill is for. Finding or adding the customer happens on the first screen (CustomerStep).
 
 function CustomerBox({
   customer,
   onChange,
-  inputRef,
 }: {
-  inputRef?: Ref<HTMLInputElement>;
   customer: CustomerCredit | null;
   onChange: (c: CustomerCredit | null) => void;
 }) {
-  const toast = useToast();
-  const [mobile, setMobile] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [notFound, setNotFound] = useState(false);
-
-  const attach = async () => {
-    const digits = mobile.replace(/\D/g, "").slice(-10);
-    if (digits.length !== 10) {
-      toast({ message: "Enter a 10-digit mobile number", tone: "error" });
-      return;
-    }
-    setBusy(true);
-    setNotFound(false);
-    try {
-      const found = await api.get<Customer | null>("/customers/lookup", { mobile: digits });
-      if (!found) {
-        setNotFound(true);
-        return;
-      }
-      onChange(await api.get<CustomerCredit>(`/invoices/customer-credit/${found.id}`));
-      setMobile("");
-    } catch (err) {
-      toast({ message: errorMessage(err), tone: "error" });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  if (customer) {
-    return (
-      <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-navy-50 text-navy-700">
-          <UserRound className="size-4" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-body font-semibold text-ink">{customer.name}</p>
-          <p className="text-helper text-slate tabular">
-            {formatMobile(customer.mobile)}
-            {customer.gstin && ` · ${customer.gstin}`}
-          </p>
-        </div>
-        {Number(customer.outstanding) > 0 && <Badge tone="warning">Owes {formatINR(customer.outstanding)}</Badge>}
-        <Button size="sm" variant="outline" onClick={() => onChange(null)}>
-          Change
-        </Button>
-      </div>
-    );
-  }
-
+  if (!customer) return null;
   return (
-    <div className="border-b border-border px-4 py-3">
-      <form
-        className="flex gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void attach();
-        }}
-      >
-        <Input
-          ref={inputRef}
-          aria-label="Customer mobile"
-          inputMode="tel"
-          placeholder="Customer mobile (or walk-in)   (F7)"
-          value={mobile}
-          onChange={(e) => {
-            setMobile(e.target.value);
-            setNotFound(false);
-          }}
-        />
-        <Button type="submit" variant="outline" loading={busy}>
-          Attach
-        </Button>
-      </form>
-      {notFound && (
-        <p className="mt-2 flex items-center gap-1.5 text-helper text-slate">
-          No customer has this number.
-          <a
-            href={`/customers/new?mobile=${encodeURIComponent(mobile.trim())}`}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 font-medium text-navy-700 hover:underline"
-          >
-            <UserPlus className="size-3.5" /> New customer
-          </a>
-          <button type="button" aria-label="Dismiss" onClick={() => setNotFound(false)} className="ml-auto text-slate">
-            <X className="size-3.5" />
-          </button>
+    <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-navy-50 text-navy-700">
+        <UserRound className="size-4" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-body font-semibold text-ink">{customer.name}</p>
+        <p className="truncate text-helper text-slate tabular">
+          {[formatMobile(customer.mobile), customer.email, customer.gstin].filter(Boolean).join(" · ")}
         </p>
-      )}
+      </div>
+      {Number(customer.outstanding) > 0 && <Badge tone="warning">Owes {formatINR(customer.outstanding)}</Badge>}
+      <Button size="sm" variant="outline" onClick={() => onChange(null)}>
+        Change
+      </Button>
     </div>
   );
 }

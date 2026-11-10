@@ -24,6 +24,6 @@ export interface ListBranchesQuery {
 }
 
 export interface BranchListFilter extends ListBranchesQuery {
-  // undefined = every branch (owners); otherwise only these ids.
+  // undefined = every branch of the business; otherwise only these ids.
   ids?: string[];
 }

@@ -3,7 +3,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Search, UserRound } from "lucide-react";
 import type { z } from "zod";
-import { formatMobile, USER_STATUSES, userCreateSchema, userUpdateSchema, type UserStatus } from "@erp-software/shared";
+import {
+  formatMobile,
+  passwordSchema,
+  USER_STATUSES,
+  userCreateSchema,
+  userUpdateSchema,
+  type UserStatus,
+} from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Badge, type Tone } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -17,7 +24,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useDebounced } from "@/lib/hooks";
 import type { User } from "@/lib/types";
 import { applyServerErrors, errorMessage, formatDateTime, initials } from "@/lib/utils";
-import { useBranches, useDeleteUser, useRoles, useSaveUser } from "./api";
+import { useBranches, useDeleteUser, useRoles, useSaveUser, useSetUserPassword } from "./api";
 import { useUsers } from "./api";
 
 const statusTone: Record<UserStatus, Tone> = { ACTIVE: "success", INACTIVE: "neutral", SUSPENDED: "danger" };
@@ -38,6 +45,7 @@ export function UsersPage() {
   const remove = useDeleteUser();
   const [editing, setEditing] = useState<User | "new" | null>(null);
   const [deleting, setDeleting] = useState<User | null>(null);
+  const [resetting, setResetting] = useState<User | null>(null);
 
   const setStatus = async (u: User, status: UserStatus) => {
     try {
@@ -62,7 +70,9 @@ export function UsersPage() {
               {u.firstName} {u.lastName}
               {u.id === me?.user.id && <span className="ml-1.5 text-helper text-slate">(you)</span>}
             </p>
-            <p className="truncate text-helper text-slate">{u.email}</p>
+            <p className="truncate text-helper text-slate">
+              {[u.mobile && formatMobile(u.mobile), u.email].filter(Boolean).join(" · ") || "—"}
+            </p>
           </div>
         </div>
       ),
@@ -97,6 +107,7 @@ export function UsersPage() {
           <Menu
             items={[
               { label: "Edit", onSelect: () => setEditing(u) },
+              { label: "Set new password", onSelect: () => setResetting(u) },
               u.status === "ACTIVE"
                 ? { label: "Deactivate", onSelect: () => void setStatus(u, "INACTIVE") }
                 : { label: "Activate", onSelect: () => void setStatus(u, "ACTIVE") },
@@ -123,7 +134,7 @@ export function UsersPage() {
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate" />
           <Input
             aria-label="Search users"
-            placeholder="Search name, email or phone"
+            placeholder="Search name, mobile or email"
             className="pl-9"
             value={search}
             onChange={(e) => {
@@ -188,6 +199,8 @@ export function UsersPage() {
         }}
       />
 
+      {resetting && <SetPasswordDialog user={resetting} onClose={() => setResetting(null)} />}
+
       <ConfirmDialog
         open={Boolean(deleting)}
         title={`Delete ${deleting?.firstName} ${deleting?.lastName}?`}
@@ -233,7 +246,7 @@ function UserForm({
     watch,
     formState: { errors },
   } = useForm<FormInput>({
-    // Editing never sends email or password: those fields aren't rendered, so they aren't in the values.
+    // Editing never sends the password: that field isn't rendered, so it isn't in the values.
     resolver: zodResolver((isNew ? userCreateSchema : userUpdateSchema) as typeof userCreateSchema),
   });
 
@@ -242,9 +255,9 @@ function UserForm({
       reset({
         firstName: "",
         lastName: "",
+        mobile: "",
         email: "",
         password: "",
-        phone: "",
         roleId: "",
         branchIds: [],
         status: "ACTIVE",
@@ -253,7 +266,8 @@ function UserForm({
       reset({
         firstName: user.firstName,
         lastName: user.lastName,
-        phone: user.phone ? formatMobile(user.phone) : "",
+        mobile: user.mobile ?? "",
+        email: user.email ?? "",
         roleId: user.role.id,
         branchIds: user.branches.map((b) => b.id),
         status: user.status,
@@ -291,24 +305,22 @@ function UserForm({
           <Field label="Last name" required error={errors.lastName?.message}>
             {(p) => <Input {...p} {...register("lastName")} />}
           </Field>
-          {isNew && (
-            <>
-              <Field label="Email" required error={errors.email?.message} helper="Used to sign in.">
-                {(p) => <Input {...p} type="email" autoComplete="off" {...register("email")} />}
-              </Field>
-              <Field
-                label="Temporary password"
-                required
-                error={errors.password?.message}
-                helper="At least 8 characters. Share it privately."
-              >
-                {(p) => <Input {...p} type="text" autoComplete="new-password" {...register("password")} />}
-              </Field>
-            </>
-          )}
-          <Field label="Mobile" error={errors.phone?.message}>
-            {(p) => <Input {...p} inputMode="tel" {...register("phone")} />}
+          <Field label="Mobile number" required error={errors.mobile?.message} helper="Used to log in.">
+            {(p) => <Input {...p} inputMode="tel" autoComplete="off" {...register("mobile")} />}
           </Field>
+          <Field label="Email" error={errors.email?.message} helper="Optional. Lets them reset their own password.">
+            {(p) => <Input {...p} type="email" autoComplete="off" {...register("email")} />}
+          </Field>
+          {isNew && (
+            <Field
+              label="Temporary password"
+              required
+              error={errors.password?.message}
+              helper="At least 8 characters. Share it privately."
+            >
+              {(p) => <Input {...p} type="text" autoComplete="new-password" {...register("password")} />}
+            </Field>
+          )}
           <Field label="Status" error={errors.status?.message}>
             {(p) => (
               <Select {...p} {...register("status")}>
@@ -364,6 +376,74 @@ function UserForm({
           </fieldset>
         )}
         <button type="submit" hidden />
+      </form>
+    </Modal>
+  );
+}
+
+// For staff who forgot their password and have no email: the owner or manager sets a temporary one.
+function SetPasswordDialog({ user, onClose }: { user: User; onClose: () => void }) {
+  const setPassword = useSetUserPassword();
+  const toast = useToast();
+  const [password, setValue] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async () => {
+    const check = passwordSchema.safeParse(password);
+    if (!check.success) {
+      setError(check.error.issues[0]?.message ?? "At least 8 characters");
+      return;
+    }
+    try {
+      await setPassword.mutateAsync({ id: user.id, password });
+      toast({ message: `New password set for ${user.firstName}` });
+      onClose();
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  };
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={`Set a new password for ${user.firstName}?`}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={submit} loading={setPassword.isPending} loadingText="Saving…">
+            Set password
+          </Button>
+        </>
+      }
+    >
+      <p className="text-body text-slate">
+        They are logged out on every device and log in again with this password. Share it privately.
+      </p>
+      <form
+        className="mt-4"
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault();
+          void submit();
+        }}
+      >
+        <Field label="Temporary password" required error={error ?? undefined} helper="At least 8 characters.">
+          {(p) => (
+            <Input
+              {...p}
+              autoFocus
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => {
+                setValue(e.target.value);
+                setError(null);
+              }}
+            />
+          )}
+        </Field>
       </form>
     </Modal>
   );

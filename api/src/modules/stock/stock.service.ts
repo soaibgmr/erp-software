@@ -108,10 +108,7 @@ export class StockService implements IStockService {
     const { branchId: requested, ...rest } = query;
     let branchIds: string[];
     if (requested === "all") {
-      const branches = await this.branches.list({
-        includeInactive: false,
-        ids: auth.isOwner ? undefined : auth.branchIds,
-      });
+      const branches = await this.branches.list(auth.businessId, { includeInactive: false, ids: auth.branchIds });
       branchIds = branches.map((b) => b.id);
     } else {
       const id = requested ?? currentBranchId;
@@ -120,7 +117,7 @@ export class StockService implements IStockService {
       branchIds = [id];
     }
     if (!branchIds.length) return { data: [], page: query.page, limit: query.limit, total: 0 };
-    return this.stock.list({ ...rest, branchIds, includeEmpty: branchIds.length === 1 });
+    return this.stock.list({ ...rest, businessId: auth.businessId, branchIds, includeEmpty: branchIds.length === 1 });
   }
 
   ledger(
@@ -139,7 +136,7 @@ export class StockService implements IStockService {
     itemId: string,
     input: UpdateStockSettingsDto,
   ): Promise<ItemStockDto> {
-    const [item] = await this.stock.findLineItems([itemId]);
+    const [item] = await this.stock.findLineItems(auth.businessId, [itemId]);
     if (!item) throw notFound("Item not found");
     const before = await this.stock.findStock(branchId, itemId);
     const after = toStockDto(await this.stock.upsertSettings(branchId, itemId, input));

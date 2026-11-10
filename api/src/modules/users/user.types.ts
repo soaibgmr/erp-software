@@ -1,4 +1,4 @@
-import type { UserStatus } from "@prisma/client";
+import type { BusinessStatus, UserStatus } from "@prisma/client";
 import type { Permission, UserCreate, UserUpdate } from "@erp-software/shared";
 
 export type { UserStatus };
@@ -20,7 +20,9 @@ export interface UserResponseDto {
   id: string;
   firstName: string;
   lastName: string;
-  email: string;
+  mobile: string | null;
+  email: string | null;
+  emailVerifiedAt: Date | null;
   phone: string | null;
   status: UserStatus;
   lastLoginAt: Date | null;
@@ -33,9 +35,10 @@ export interface UserResponseDto {
 // GET /users/me: the profile plus what the UI needs to build menus and the branch switcher.
 export interface MeResponseDto {
   user: UserResponseDto;
+  business: { id: string; name: string; status: BusinessStatus };
   isOwner: boolean;
   permissions: Permission[];
-  // Branches the user can switch to (every active branch for owners).
+  // Branches the user can switch to (every active branch of the business for owners).
   branches: (BranchSummary & { stateCode: string; city: string | null })[];
 }
 
@@ -43,6 +46,8 @@ export interface MeResponseDto {
 export interface AuthUserRecord {
   id: string;
   status: UserStatus;
+  businessId: string;
+  businessStatus: BusinessStatus;
   role: { id: string; key: string | null; permissions: string[] };
   branchIds: string[];
 }
@@ -51,6 +56,16 @@ export interface UserCredentials {
   id: string;
   status: UserStatus;
   passwordHash: string;
+  businessId: string;
+  businessStatus: BusinessStatus;
+}
+
+// Where account emails (reset password, verify email) go.
+export interface UserContact {
+  id: string;
+  firstName: string;
+  email: string | null;
+  businessId: string;
 }
 
 export interface TokenPair {
@@ -62,10 +77,7 @@ export interface AuthResponseDto extends TokenPair {
   user: UserResponseDto;
 }
 
-export interface LoginDto {
-  email: string;
-  password: string;
-}
+export type { LoginInput as LoginDto, RegisterInput as RegisterDto } from "@erp-software/shared";
 
 export interface ChangePasswordDto {
   currentPassword: string;

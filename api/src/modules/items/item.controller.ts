@@ -10,16 +10,16 @@ export class ItemController {
   constructor(@inject(TYPES.ItemService) private readonly items: IItemService) {}
 
   list = async (_req: Request, res: Response) => {
-    sendPaginated(res, await this.items.list(res.locals.query, res.locals.branchId));
+    sendPaginated(res, await this.items.list(res.locals.auth, res.locals.query, res.locals.branchId));
   };
 
   search = async (_req: Request, res: Response) => {
     const { q, limit } = res.locals.query;
-    sendSuccess(res, await this.items.search(q, limit, res.locals.branchId));
+    sendSuccess(res, await this.items.search(res.locals.auth, q, limit, res.locals.branchId));
   };
 
   byCode = async (_req: Request, res: Response) => {
-    sendSuccess(res, await this.items.getByCode(res.locals.params.code, res.locals.branchId));
+    sendSuccess(res, await this.items.getByCode(res.locals.auth, res.locals.params.code, res.locals.branchId));
   };
 
   getById = async (_req: Request, res: Response) => {

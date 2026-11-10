@@ -11,6 +11,7 @@ import type { IUserRepository } from "./users/interfaces/iuser.repository";
 import type { IRefreshTokenRepository } from "./users/interfaces/irefresh-token.repository";
 import type { IRoleRepository } from "./roles/interfaces/irole.repository";
 import type { IBranchRepository } from "./branches/interfaces/ibranch.repository";
+import type { IBusinessRepository } from "./business/interfaces/ibusiness.repository";
 import type { ICustomerRepository } from "./customers/interfaces/icustomer.repository";
 import type { IDocumentSequenceRepository } from "./document-sequences/interfaces/idocument-sequence.repository";
 import type { UserResponseDto } from "./users/user.types";
@@ -35,7 +36,9 @@ const userDto = (
     id,
     firstName: "Test",
     lastName: "User",
+    mobile: null,
     email: `${id}@example.com`,
+    emailVerifiedAt: null,
     phone: null,
     status,
     lastLoginAt: null,
@@ -49,26 +52,30 @@ const userDto = (
 function userService(opts: { users?: Record<string, UserResponseDto>; activeOwners?: number } = {}) {
   const users = opts.users ?? {};
   const userRepo = stub<IUserRepository>({
-    findById: async (id) => users[id] ?? null,
+    findById: async (_businessId, id) => users[id] ?? null,
     existsByEmail: async () => false,
+    existsByMobile: async () => false,
     countActiveOwners: async () => opts.activeOwners ?? 0,
-    create: async (data) => ({ ...userDto("new", "COUNTER"), email: data.email }),
-    update: async (id) => users[id] ?? null,
+    create: async (_businessId, data) => ({ ...userDto("new", "COUNTER"), email: data.email ?? null }),
+    update: async (_businessId, id) => users[id] ?? null,
     softDelete: async () => true,
   });
   const tokens = stub<IRefreshTokenRepository>({ revokeAllForUser: async () => {} });
   const roleRepo = stub<IRoleRepository>({
-    findById: async (id) => Object.values(roles).find((r) => r.id === id) ?? null,
+    findById: async (_businessId, id) => Object.values(roles).find((r) => r.id === id) ?? null,
   });
   const branchRepo = stub<IBranchRepository>({
-    findManyByIds: async (list) => list.filter((b) => [ids.branchA, ids.branchB].includes(b)).map((b) => branch(b)),
+    findManyByIds: async (_businessId, list) =>
+      list.filter((b) => [ids.branchA, ids.branchB].includes(b)).map((b) => branch(b)),
   });
-  return new UserService(userRepo, tokens, roleRepo, branchRepo, new FakeAudit());
+  const businessRepo = stub<IBusinessRepository>({});
+  return new UserService(userRepo, tokens, roleRepo, branchRepo, businessRepo, new FakeAudit());
 }
 
 const newUser = {
   firstName: "A",
   lastName: "B",
+  mobile: "9876543210",
   email: "a@b.co",
   password: "password-1",
   phone: null,
@@ -133,9 +140,16 @@ describe("UserService permission rules", () => {
 
 describe("RoleService", () => {
   const roleRepo = stub<IRoleRepository>({
-    findById: async (id) => Object.values(roles).find((r) => r.id === id) ?? null,
+    findById: async (_businessId, id) => Object.values(roles).find((r) => r.id === id) ?? null,
     existsByName: async () => false,
-    create: async (data) => ({ ...roles.counter, id: "new", key: null, isSystem: false, ...data, description: null }),
+    create: async (_businessId, data) => ({
+      ...roles.counter,
+      id: "new",
+      key: null,
+      isSystem: false,
+      ...data,
+      description: null,
+    }),
   });
   const svc = new RoleService(roleRepo, new FakeAudit());
 
@@ -176,10 +190,10 @@ describe("CustomerService", () => {
   };
   const audit = new FakeAudit();
   const repo = stub<ICustomerRepository>({
-    findById: async (id) => (id === existing.id ? existing : null),
-    findByMobile: async (mobile, excludeId) =>
+    findById: async (_businessId, id) => (id === existing.id ? existing : null),
+    findByMobile: async (_businessId, mobile, excludeId) =>
       mobile === existing.mobile && excludeId !== existing.id ? existing : null,
-    update: async (_id, data) => ({
+    update: async (_businessId, _id, data) => ({
       ...existing,
       ...data,
       creditLimit: data.creditLimit?.toFixed(2) ?? existing.creditLimit,
@@ -244,7 +258,7 @@ describe("BranchService", () => {
   it("non-owners only list their own branches", async () => {
     let seenIds: string[] | undefined = ["unset"];
     const repo = stub<IBranchRepository>({
-      list: async (filter) => {
+      list: async (_businessId, filter) => {
         seenIds = filter.ids;
         return [];
       },

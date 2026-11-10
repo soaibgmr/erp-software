@@ -4,5 +4,5 @@ import type { AuditLogResponseDto, CreateAuditLogData, ListAuditLogsQuery } from
 
 export interface IAuditRepository {
   create(data: CreateAuditLogData, db?: Db): Promise<void>;
-  list(query: ListAuditLogsQuery): Promise<Paginated<AuditLogResponseDto>>;
+  list(businessId: string, query: ListAuditLogsQuery): Promise<Paginated<AuditLogResponseDto>>;
 }

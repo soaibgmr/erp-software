@@ -20,26 +20,27 @@ export class LabourServiceService implements ILabourServiceService {
     @inject(TYPES.AuditService) private readonly audit: IAuditService,
   ) {}
 
-  list(query: ListLabourServicesQuery): Promise<Paginated<LabourServiceResponseDto>> {
-    return this.services.list(query);
+  list(auth: AuthContext, query: ListLabourServicesQuery): Promise<Paginated<LabourServiceResponseDto>> {
+    return this.services.list(auth.businessId, query);
   }
 
-  async getById(id: string): Promise<LabourServiceResponseDto> {
-    const row = await this.services.findById(id);
+  async getById(auth: AuthContext, id: string): Promise<LabourServiceResponseDto> {
+    const row = await this.services.findById(auth.businessId, id);
     if (!row) throw notFound("Labour service not found");
     return row;
   }
 
-  async create(_auth: AuthContext, input: CreateLabourServiceDto): Promise<LabourServiceResponseDto> {
-    await this.assertNameFree(input.name);
-    return this.services.create(input);
+  async create(auth: AuthContext, input: CreateLabourServiceDto): Promise<LabourServiceResponseDto> {
+    await this.assertNameFree(auth, input.name);
+    return this.services.create(auth.businessId, input);
   }
 
   async update(auth: AuthContext, id: string, input: UpdateLabourServiceDto): Promise<LabourServiceResponseDto> {
-    const before = await this.getById(id);
-    if (input.name && input.name.toLowerCase() !== before.name.toLowerCase()) await this.assertNameFree(input.name, id);
+    const before = await this.getById(auth, id);
+    if (input.name && input.name.toLowerCase() !== before.name.toLowerCase())
+      await this.assertNameFree(auth, input.name, id);
 
-    const after = await this.services.update(id, input);
+    const after = await this.services.update(auth.businessId, id, input);
     if (!after) throw notFound("Labour service not found");
 
     // Price changes are audited (PRD M12.1).
@@ -56,13 +57,13 @@ export class LabourServiceService implements ILabourServiceService {
   }
 
   async remove(auth: AuthContext, id: string): Promise<void> {
-    const before = await this.getById(id);
-    await this.services.softDelete(id);
+    const before = await this.getById(auth, id);
+    await this.services.softDelete(auth.businessId, id);
     await this.audit.record(auth, { action: "labourService.delete", entity: "LabourService", entityId: id, before });
   }
 
-  private async assertNameFree(name: string, excludeId?: string) {
-    if (await this.services.findByName(name, excludeId)) {
+  private async assertNameFree(auth: AuthContext, name: string, excludeId?: string) {
+    if (await this.services.findByName(auth.businessId, name, excludeId)) {
       throw fieldErrors([{ path: "name", message: `${name} already exists` }]);
     }
   }

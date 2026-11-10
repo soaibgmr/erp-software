@@ -49,12 +49,22 @@ CI (`.github/workflows/ci.yml`) runs `npm ci`, `typecheck`, `lint`, `test`, `bui
 
 **After editing `packages/shared/src`, rebuild it** (`npm run build:shared`). The api and ui resolve the package's `dist/`, so they keep seeing the old code until it is rebuilt. `dist/` folders in every workspace are build output; never edit them.
 
+## Multi-company (multi-tenant)
+
+The product is sold to many shops; each company's data is fully separate (decided 2026-11-10).
+- **`Business` is the tenant.** Every table that isn't tied to a branch carries `business_id` (users, roles, settings, customers, items, barcodes, catalog masters, labour services, audit logs, outbox). Branch-scoped tables (invoices, payments, stock, shifts, credit notes, number series) are separated through their branch, because a branch belongs to one business.
+- **Every repository method on company data takes `businessId` as its first argument** and filters by it; services pass `auth.businessId`. A missing filter is then a compile error, so keep new methods in that shape. Raw SQL on items or customers without a branch filter must add `business_id = …`.
+- `AuthContext.branchIds` of an **owner** holds every branch of *their* business (filled in `AuthMiddleware`), so `canAccessBranch` never crosses companies.
+- **Sign-up:** `POST /auth/register` creates a `PENDING` business with its own copy of the system roles, a `MAIN` branch and the owner (`provisionBusiness`, shared with the seed). Users of a shop that isn't `ACTIVE` get 403 `BUSINESS_PENDING` / `BUSINESS_SUSPENDED` / `BUSINESS_REJECTED`, checked on every request.
+- **Two kinds of login:** shop users (mobile number or email + password; mobile and email are unique across all shops) and the **platform admin** (`platform_admins` table, `/api/v1/platform/*`, UI at `/admin`; there is one login page, `/login`, whose "Username" box takes a mobile number or email and falls back to the platform login for an email that isn't a shop account), who approves, rejects and suspends shops and never sees shop data. Platform tokens carry `aud: "platform"`; each side rejects the other's tokens.
+- **Email** goes through one shared service, `IMailService` (`TYPES.MailService`, `api/src/modules/mail`), with templates in `mail.templates.ts`. SMTP via the `SMTP_*` env vars; without `SMTP_HOST`, emails are written to the API log (locally, that is how you open verify and reset links). Use it for future emails too (invoices, receipts, reminders).
+
 ## Cross-workspace architecture
 
 - **One source of truth in shared.** The same zod schemas validate API requests (`validate()` middleware) and UI forms (`zodResolver`). `priceCart` (`pricing.ts`) prices the POS cart in the browser and the invoice on the server, so the totals always match. Permissions (`permissions.ts`), status enums and their labels (`INVOICE_STATUS_LABELS`, `PAYMENT_METHOD_LABELS`, …), document number series (`documents.ts`) and report definitions (`REPORTS`) all live there. Change them in shared and both sides follow.
 - **Money and quantities.** Calculations use integer paise (`money.ts`) and integer thousandths for quantity (`quantity.ts`). The API sends money as 2-decimal strings and quantity as 3-decimal strings. Format only for display, with `formatINR`.
 - **API contract.** Every response is an envelope: `{ success, data, meta? }` or `{ success: false, error: { code, message, details? } }`. `ui/src/lib/api-client.ts` unwraps it, adds the `clientid`, Bearer token and `x-branch-id` headers, turns errors into `ApiError` (whose `fieldErrors` map server field errors onto forms), and rotates the refresh token once on a 401. UI DTO types are hand-written in `ui/src/lib/types.ts`; update them when an API DTO changes.
-- **Branch scope.** Most data belongs to a branch. The UI sends the selected branch as `x-branch-id` (from `useAuth().branch`). Branch-scoped query keys include the branch id.
+- **Branch scope.** Most data belongs to a branch (and every branch to one business). The UI sends the selected branch as `x-branch-id` (from `useAuth().branch`). Branch-scoped query keys include the branch id.
 - **Time zone.** Day boundaries, financial year (April–March), due dates and report periods use `APP_TIMEZONE` (default `Asia/Kolkata`; helpers in `api/src/utils/time.ts`). The UI reads it from `GET /api/v1/health`.
 
 ## UI structure (`ui/src`)

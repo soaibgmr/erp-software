@@ -31,28 +31,28 @@ export class ItemService implements IItemService {
     @inject(TYPES.AuditService) private readonly audit: IAuditService,
   ) {}
 
-  list(query: ListItemsQuery, branchId?: string): Promise<Paginated<ItemResponseDto>> {
-    return this.items.list(query, branchId);
+  list(auth: AuthContext, query: ListItemsQuery, branchId?: string): Promise<Paginated<ItemResponseDto>> {
+    return this.items.list(auth.businessId, query, branchId);
   }
 
-  search(term: string, limit: number, branchId?: string): Promise<ItemSearchResultDto[]> {
-    return this.items.search(term, limit, branchId);
+  search(auth: AuthContext, term: string, limit: number, branchId?: string): Promise<ItemSearchResultDto[]> {
+    return this.items.search(auth.businessId, term, limit, branchId);
   }
 
-  async getByCode(code: string, branchId?: string): Promise<ItemSearchResultDto> {
-    const item = await this.items.findByCode(code, branchId);
+  async getByCode(auth: AuthContext, code: string, branchId?: string): Promise<ItemSearchResultDto> {
+    const item = await this.items.findByCode(auth.businessId, code, branchId);
     if (!item) throw notFound(`No item has barcode or SKU ${code}`);
     return item;
   }
 
   async getById(auth: AuthContext, id: string, branchId?: string): Promise<ItemDetailDto> {
-    const item = await this.items.findById(id, branchId);
+    const item = await this.items.findById(auth.businessId, id, branchId);
     if (!item) throw notFound("Item not found");
 
     // One row per branch the user can see, zero-filled where the item was never stocked.
     const [rows, branches] = await Promise.all([
       this.items.stockRows(id),
-      this.branches.list({ includeInactive: false, ids: auth.isOwner ? undefined : auth.branchIds }),
+      this.branches.list(auth.businessId, { includeInactive: false, ids: auth.branchIds }),
     ]);
     const stockByBranch = branches.map((b) => {
       const row = rows.find((r) => r.branchId === b.id);
@@ -62,13 +62,13 @@ export class ItemService implements IItemService {
   }
 
   async create(auth: AuthContext, input: CreateItemDto, branchId?: string): Promise<ItemDetailDto> {
-    await this.assertReferences(input);
-    const { id } = await this.items.create({ ...input, createdById: auth.userId });
+    await this.assertReferences(auth, input);
+    const { id } = await this.items.create(auth.businessId, { ...input, createdById: auth.userId });
     return this.getById(auth, id, branchId);
   }
 
   async update(auth: AuthContext, id: string, input: UpdateItemDto, branchId?: string): Promise<ItemDetailDto> {
-    const before = await this.items.findById(id);
+    const before = await this.items.findById(auth.businessId, id);
     if (!before) throw notFound("Item not found");
 
     const merged = {
@@ -79,10 +79,10 @@ export class ItemService implements IItemService {
     };
     const issues = itemRuleIssues({ ...merged, barcodes: input.barcodes });
     if (issues.length) throw fieldErrors(issues);
-    await this.assertReferences(input, id);
+    await this.assertReferences(auth, input, id);
 
     const data: ItemWriteData = input;
-    if (!(await this.items.update(id, data))) throw notFound("Item not found");
+    if (!(await this.items.update(auth.businessId, id, data))) throw notFound("Item not found");
     const after = await this.getById(auth, id, branchId);
 
     // Price and tax changes are audited (PRD M12.1).
@@ -101,37 +101,38 @@ export class ItemService implements IItemService {
   }
 
   async remove(auth: AuthContext, id: string): Promise<void> {
-    const before = await this.items.findById(id);
+    const before = await this.items.findById(auth.businessId, id);
     if (!before) throw notFound("Item not found");
     if (await this.items.hasStock(id)) {
       throw conflict(
         `${before.name} still has stock, reservations or transfers in a branch. Adjust them to zero first.`,
       );
     }
-    await this.items.softDelete(id);
+    await this.items.softDelete(auth.businessId, id);
     await this.audit.record(auth, { action: "item.delete", entity: "Item", entityId: id, before });
   }
 
   // SKU and barcodes must be free among active items; category, brand and models must exist.
-  private async assertReferences(input: UpdateItemDto, excludeId?: string) {
+  private async assertReferences(auth: AuthContext, input: UpdateItemDto, excludeId?: string) {
+    const { businessId } = auth;
     const issues: Issue[] = [];
     if (input.sku) {
-      const owner = await this.items.findSkuOwner(input.sku, excludeId);
+      const owner = await this.items.findSkuOwner(businessId, input.sku, excludeId);
       if (owner) issues.push({ path: "sku", message: `SKU ${input.sku} is already used by ${owner.name}` });
     }
     if (input.barcodes?.length) {
-      const taken = await this.items.findBarcodeOwners(input.barcodes, excludeId);
+      const taken = await this.items.findBarcodeOwners(businessId, input.barcodes, excludeId);
       if (taken[0])
         issues.push({ path: "barcodes", message: `Barcode ${taken[0].code} is already on ${taken[0].itemName}` });
     }
-    if (input.categoryId && !(await this.catalog.findById("categories", input.categoryId))) {
+    if (input.categoryId && !(await this.catalog.findById(businessId, "categories", input.categoryId))) {
       issues.push({ path: "categoryId", message: "Choose a category" });
     }
-    if (input.brandId && !(await this.catalog.findById("brands", input.brandId))) {
+    if (input.brandId && !(await this.catalog.findById(businessId, "brands", input.brandId))) {
       issues.push({ path: "brandId", message: "Choose a brand" });
     }
     const models = [...new Set(input.compatibleModelIds ?? [])];
-    if (models.length && (await this.items.countActiveModels(models)) !== models.length) {
+    if (models.length && (await this.items.countActiveModels(businessId, models)) !== models.length) {
       issues.push({ path: "compatibleModelIds", message: "One of the vehicle models no longer exists" });
     }
     if (issues.length) throw fieldErrors(issues);

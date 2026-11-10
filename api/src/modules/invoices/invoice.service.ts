@@ -36,10 +36,7 @@ export class InvoiceService implements IInvoiceService {
     const { branchId: requested, from, to, ...rest } = query;
     let branchIds: string[];
     if (requested === "all") {
-      const branches = await this.branches.list({
-        includeInactive: true,
-        ids: auth.isOwner ? undefined : auth.branchIds,
-      });
+      const branches = await this.branches.list(auth.businessId, { includeInactive: true, ids: auth.branchIds });
       branchIds = branches.map((b) => b.id);
     } else {
       const id = requested ?? currentBranchId;
@@ -67,7 +64,10 @@ export class InvoiceService implements IInvoiceService {
     const invoice = await this.getById(auth, id);
     if (invoice.kind === "OPENING_BALANCE")
       throw badRequest(`${invoice.number} is old dues, not a tax invoice; there is nothing to print`);
-    const [business, branch] = await Promise.all([this.business.get(), this.branches.findById(invoice.branch.id)]);
+    const [business, branch] = await Promise.all([
+      this.business.get(auth.businessId),
+      this.branches.findById(auth.businessId, invoice.branch.id),
+    ]);
 
     // HSN-wise tax summary, as printed under the lines.
     const groups = new Map<
@@ -151,7 +151,7 @@ export class InvoiceService implements IInvoiceService {
       }
       await this.invoices.markCancelled(tx, id, auth.userId, reason);
       await this.invoices.updateTotals(tx, id, { paidPaise: 0, creditedPaise: inv.creditedTotal, status: "CANCELLED" });
-      await this.invoices.addOutboxEvent(tx, "InvoiceCancelled", {
+      await this.invoices.addOutboxEvent(tx, auth.businessId, "InvoiceCancelled", {
         invoiceId: id,
         number: inv.number,
         branchId: inv.branchId,

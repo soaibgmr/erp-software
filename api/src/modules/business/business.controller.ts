@@ -9,7 +9,7 @@ export class BusinessController {
   constructor(@inject(TYPES.BusinessService) private readonly businessService: IBusinessService) {}
 
   get = async (_req: Request, res: Response) => {
-    sendSuccess(res, await this.businessService.get());
+    sendSuccess(res, await this.businessService.get(res.locals.auth.businessId));
   };
 
   update = async (_req: Request, res: Response) => {

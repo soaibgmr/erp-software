@@ -106,6 +106,8 @@ export class StockRepository implements IStockRepository {
 
   async list(f: StockListFilter): Promise<Paginated<StockRowDto>> {
     const conditions: Prisma.Sql[] = [
+      Prisma.sql`i.business_id = ${f.businessId}::uuid`,
+      Prisma.sql`b.business_id = ${f.businessId}::uuid`,
       Prisma.sql`i.deleted_at IS NULL`,
       Prisma.sql`i.is_active`,
       Prisma.sql`b.id = ANY(${f.branchIds}::uuid[])`,
@@ -220,10 +222,10 @@ export class StockRepository implements IStockRepository {
     });
   }
 
-  async findLineItems(ids: string[]): Promise<LineItem[]> {
+  async findLineItems(businessId: string, ids: string[]): Promise<LineItem[]> {
     if (!ids.length) return [];
     const rows = await this.prisma.item.findMany({
-      where: { id: { in: ids }, deletedAt: null },
+      where: { id: { in: ids }, businessId, deletedAt: null },
       select: { id: true, sku: true, name: true, unit: true, purchasePrice: true },
     });
     return rows.map((r) => ({ ...r, purchasePrice: r.purchasePrice.toFixed(2) }));
@@ -239,25 +241,33 @@ export class StockRepository implements IStockRepository {
     return new Set(rows.map((r) => r.itemId));
   }
 
-  findBrandsByNames(names: string[]) {
+  findBrandsByNames(businessId: string, names: string[]) {
     return this.prisma.brand.findMany({
-      where: { deletedAt: null, OR: names.map((name) => ({ name: { equals: name, mode: "insensitive" as const } })) },
+      where: {
+        businessId,
+        deletedAt: null,
+        OR: names.map((name) => ({ name: { equals: name, mode: "insensitive" as const } })),
+      },
       select: { id: true, name: true },
     });
   }
 
-  findCategoriesByNames(names: string[]) {
+  findCategoriesByNames(businessId: string, names: string[]) {
     return this.prisma.itemCategory.findMany({
-      where: { deletedAt: null, OR: names.map((name) => ({ name: { equals: name, mode: "insensitive" as const } })) },
+      where: {
+        businessId,
+        deletedAt: null,
+        OR: names.map((name) => ({ name: { equals: name, mode: "insensitive" as const } })),
+      },
       select: { id: true, name: true },
     });
   }
 
-  createBrand(db: Db, name: string) {
-    return db.brand.create({ data: { name }, select: { id: true, name: true } });
+  createBrand(db: Db, businessId: string, name: string) {
+    return db.brand.create({ data: { businessId, name }, select: { id: true, name: true } });
   }
 
-  createCategory(db: Db, name: string) {
-    return db.itemCategory.create({ data: { name }, select: { id: true, name: true } });
+  createCategory(db: Db, businessId: string, name: string) {
+    return db.itemCategory.create({ data: { businessId, name }, select: { id: true, name: true } });
   }
 }

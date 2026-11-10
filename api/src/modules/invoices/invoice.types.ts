@@ -53,6 +53,8 @@ export interface CustomerCredit {
   type: CustomerType;
   name: string;
   mobile: string;
+  // Where the bill is emailed after charging, when set.
+  email: string | null;
   gstin: string | null;
   address: string | null;
   stateCode: string | null;

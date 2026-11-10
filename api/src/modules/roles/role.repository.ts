@@ -24,46 +24,50 @@ const toDto = ({ _count, ...role }: RoleRow): RoleResponseDto => ({ ...role, use
 export class RoleRepository implements IRoleRepository {
   constructor(@inject(TYPES.PrismaClient) private readonly prisma: PrismaClient) {}
 
-  async findById(id: string): Promise<RoleResponseDto | null> {
-    const row = await this.prisma.role.findFirst({ where: { id, deletedAt: null }, select: roleSelect });
+  async findById(businessId: string, id: string): Promise<RoleResponseDto | null> {
+    const row = await this.prisma.role.findFirst({ where: { id, businessId, deletedAt: null }, select: roleSelect });
     return row && toDto(row);
   }
 
-  async findByKey(key: string): Promise<RoleResponseDto | null> {
-    const row = await this.prisma.role.findFirst({ where: { key, deletedAt: null }, select: roleSelect });
+  async findByKey(businessId: string, key: string): Promise<RoleResponseDto | null> {
+    const row = await this.prisma.role.findFirst({ where: { key, businessId, deletedAt: null }, select: roleSelect });
     return row && toDto(row);
   }
 
-  async existsByName(name: string, excludeId?: string): Promise<boolean> {
+  async existsByName(businessId: string, name: string, excludeId?: string): Promise<boolean> {
     const found = await this.prisma.role.findFirst({
-      where: { name: { equals: name, mode: "insensitive" }, ...(excludeId && { id: { not: excludeId } }) },
+      where: {
+        businessId,
+        name: { equals: name, mode: "insensitive" },
+        ...(excludeId && { id: { not: excludeId } }),
+      },
       select: { id: true },
     });
     return found !== null;
   }
 
-  async list(): Promise<RoleResponseDto[]> {
+  async list(businessId: string): Promise<RoleResponseDto[]> {
     const rows = await this.prisma.role.findMany({
-      where: { deletedAt: null },
+      where: { businessId, deletedAt: null },
       select: roleSelect,
       orderBy: [{ isSystem: "desc" }, { name: "asc" }],
     });
     return rows.map(toDto);
   }
 
-  async create(data: CreateRoleDto): Promise<RoleResponseDto> {
-    return toDto(await this.prisma.role.create({ data, select: roleSelect }));
+  async create(businessId: string, data: CreateRoleDto): Promise<RoleResponseDto> {
+    return toDto(await this.prisma.role.create({ data: { ...data, businessId }, select: roleSelect }));
   }
 
-  async update(id: string, data: UpdateRoleDto): Promise<RoleResponseDto | null> {
-    const { count } = await this.prisma.role.updateMany({ where: { id, deletedAt: null }, data });
+  async update(businessId: string, id: string, data: UpdateRoleDto): Promise<RoleResponseDto | null> {
+    const { count } = await this.prisma.role.updateMany({ where: { id, businessId, deletedAt: null }, data });
     if (count === 0) return null;
-    return this.findById(id);
+    return this.findById(businessId, id);
   }
 
-  async softDelete(id: string): Promise<boolean> {
+  async softDelete(businessId: string, id: string): Promise<boolean> {
     const { count } = await this.prisma.role.updateMany({
-      where: { id, deletedAt: null },
+      where: { id, businessId, deletedAt: null },
       data: { deletedAt: new Date() },
     });
     return count > 0;

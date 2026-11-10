@@ -245,7 +245,7 @@ describe("ReportService", () => {
     new ReportService(
       stub<IReportRepository>(reports),
       stub<IBranchRepository>({
-        findById: async (id) => branch(id),
+        findById: async (_businessId, id) => branch(id),
         list: async () => [branch(ids.branchA), branch(ids.branchB)],
         ...branches,
       }),
@@ -318,7 +318,7 @@ describe("DashboardService", () => {
           { partyId: "c2", party: "Anu", mobile: null, dueDate: today, owed: "100.00" },
         ],
       }),
-      stub<IBranchRepository>({ findById: async (id) => branch(id) }),
+      stub<IBranchRepository>({ findById: async (_businessId, id) => branch(id) }),
       stub<IStockService>({}),
     );
     const s = await svc.summary(authFor("owner"), ids.branchA, { range: "7d" });

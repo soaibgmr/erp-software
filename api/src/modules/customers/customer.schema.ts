@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { CUSTOMER_TYPES, customerCreateSchema, customerUpdateSchema, mobileSchema } from "@erp-software/shared";
+import {
+  CUSTOMER_TYPES,
+  customerCreateSchema,
+  customerUpdateSchema,
+  loginIdentifierSchema,
+} from "@erp-software/shared";
 import { paginationQuery, searchQuery } from "../../common/schemas";
 
 export { customerCreateSchema as createCustomerSchema, customerUpdateSchema as updateCustomerSchema };
@@ -11,4 +16,5 @@ export const listCustomersQuerySchema = z.object({
   sort: z.enum(["name", "recent"]).default("recent"),
 });
 
-export const lookupCustomerQuerySchema = z.object({ mobile: mobileSchema });
+// A mobile number, or an email when it contains "@".
+export const lookupCustomerQuerySchema = z.object({ q: loginIdentifierSchema });

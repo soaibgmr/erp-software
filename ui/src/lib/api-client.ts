@@ -72,6 +72,11 @@ export const session = {
   get branchId() {
     return storage.get(BRANCH_KEY);
   },
+  // Signing out forgets the branch too, so the next person (maybe of another shop) starts clean.
+  clear() {
+    this.set(null);
+    storage.set(BRANCH_KEY, null);
+  },
   set branchId(id: string | null) {
     storage.set(BRANCH_KEY, id);
   },
@@ -80,6 +85,12 @@ export const session = {
 let onSessionExpired: () => void = () => {};
 export const setSessionExpiredHandler = (fn: () => void) => {
   onSessionExpired = fn;
+};
+
+// Called when the API says the user's shop is no longer active (403 BUSINESS_SUSPENDED…).
+let onBusinessBlocked: (message: string) => void = () => {};
+export const setBusinessBlockedHandler = (fn: (message: string) => void) => {
+  onBusinessBlocked = fn;
 };
 
 type Query = Record<string, string | number | boolean | undefined | null>;
@@ -91,6 +102,8 @@ interface RequestOptions {
   auth?: boolean;
   // Extra request headers, e.g. Idempotency-Key on the POS charge.
   headers?: Record<string, string>;
+  // Send this token instead of the shop session (the platform admin console). No refresh, no branch header.
+  bearer?: string | null;
 }
 
 function buildUrl(path: string, query?: Query) {
@@ -135,9 +148,11 @@ async function raw(
 ): Promise<{ data: unknown; meta?: unknown }> {
   const headers: Record<string, string> = { clientid: CLIENT_ID, ...opts.headers };
   if (opts.body !== undefined) headers["content-type"] = "application/json";
-  const useAuth = opts.auth !== false;
+  const separate = opts.bearer !== undefined;
+  const useAuth = opts.auth !== false && !separate;
+  if (separate && opts.bearer) headers.authorization = `Bearer ${opts.bearer}`;
   if (useAuth && session.token) headers.authorization = `Bearer ${session.token}`;
-  if (session.branchId) headers["x-branch-id"] = session.branchId;
+  if (!separate && session.branchId) headers["x-branch-id"] = session.branchId;
 
   let res: Response;
   try {
@@ -161,6 +176,9 @@ async function raw(
   const json = await res.json().catch(() => null);
   if (!res.ok || !json?.success) {
     const error = json?.error ?? {};
+    if (useAuth && res.status === 403 && String(error.code ?? "").startsWith("BUSINESS_")) {
+      onBusinessBlocked(error.message ?? "Your shop can't be used right now.");
+    }
     throw new ApiError(
       res.status,
       error.code ?? "HTTP_ERROR",
@@ -212,14 +230,23 @@ async function download(path: string, query?: Query, retried = false): Promise<s
 
 export const api = {
   download,
-  get: async <T>(path: string, query?: Query, signal?: AbortSignal) =>
-    (await raw("GET", path, { query, signal })).data as T,
-  list: async <T>(path: string, query?: Query, signal?: AbortSignal) => {
-    const res = await raw("GET", path, { query, signal });
+  get: async <T>(path: string, query?: Query, signal?: AbortSignal, opts?: { bearer?: string | null }) =>
+    (await raw("GET", path, { query, signal, ...opts })).data as T,
+  list: async <T>(path: string, query?: Query, signal?: AbortSignal, opts?: { bearer?: string | null }) => {
+    const res = await raw("GET", path, { query, signal, ...opts });
     return { data: res.data as T[], meta: res.meta as PaginationMeta } satisfies Paginated<T>;
   },
-  post: async <T>(path: string, body?: unknown, opts?: { auth?: boolean; headers?: Record<string, string> }) =>
-    (await raw("POST", path, { body: body ?? {}, ...opts })).data as T,
-  patch: async <T>(path: string, body: unknown) => (await raw("PATCH", path, { body })).data as T,
+  post: async <T>(
+    path: string,
+    body?: unknown,
+    opts?: { auth?: boolean; headers?: Record<string, string>; bearer?: string | null },
+  ) => (await raw("POST", path, { body: body ?? {}, ...opts })).data as T,
+  // Like post, but also returns the server's message (shown to the user after sign-up, reset…).
+  postWithMessage: async <T>(path: string, body: unknown) => {
+    const res = (await raw("POST", path, { body, auth: false })) as { data: unknown; message?: string };
+    return { data: res.data as T, message: res.message };
+  },
+  patch: async <T>(path: string, body: unknown, opts?: { bearer?: string | null }) =>
+    (await raw("PATCH", path, { body, ...opts })).data as T,
   delete: async <T = null>(path: string) => (await raw("DELETE", path)).data as T,
 };

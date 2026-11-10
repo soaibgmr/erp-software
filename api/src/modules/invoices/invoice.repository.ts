@@ -82,10 +82,10 @@ export class InvoiceRepository implements IInvoiceRepository {
 
   // ---------- Pricing lookups ----------
 
-  async findSaleItems(ids: string[], branchId: string): Promise<SaleItemRow[]> {
+  async findSaleItems(businessId: string, ids: string[], branchId: string): Promise<SaleItemRow[]> {
     if (!ids.length) return [];
     const rows = await this.prisma.item.findMany({
-      where: { id: { in: ids }, deletedAt: null },
+      where: { id: { in: ids }, businessId, deletedAt: null },
       select: {
         id: true,
         sku: true,
@@ -117,10 +117,10 @@ export class InvoiceRepository implements IInvoiceRepository {
     }));
   }
 
-  async findSaleLabour(ids: string[]): Promise<SaleLabourRow[]> {
+  async findSaleLabour(businessId: string, ids: string[]): Promise<SaleLabourRow[]> {
     if (!ids.length) return [];
     const rows = await this.prisma.labourService.findMany({
-      where: { id: { in: ids }, deletedAt: null },
+      where: { id: { in: ids }, businessId, deletedAt: null },
       select: { id: true, name: true, sacCode: true, gstRate: true, rate: true, isActive: true },
     });
     return rows.map((r) => ({ ...r, gstRate: Number(r.gstRate), rate: Number(r.rate) }));
@@ -479,7 +479,7 @@ export class InvoiceRepository implements IInvoiceRepository {
     await db.idempotencyKey.create({ data });
   }
 
-  async addOutboxEvent(db: Db, type: string, payload: Record<string, unknown>) {
-    await db.outboxEvent.create({ data: { type, payload: payload as Prisma.InputJsonValue } });
+  async addOutboxEvent(db: Db, businessId: string, type: string, payload: Record<string, unknown>) {
+    await db.outboxEvent.create({ data: { businessId, type, payload: payload as Prisma.InputJsonValue } });
   }
 }

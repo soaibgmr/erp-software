@@ -3,6 +3,8 @@ import { canAccessBranch, type AuthContext } from "./auth-context";
 import { badRequest, forbidden } from "./http-error";
 
 export interface BranchScope {
+  // The company the branches belong to.
+  businessId: string;
   branchIds: string[];
   // "Main branch" or "All branches"; printed on reports and exports.
   label: string;
@@ -18,8 +20,9 @@ export async function resolveBranchScope(
   currentBranchId: string | undefined,
 ): Promise<BranchScope> {
   if (requested === "all") {
-    const list = await branches.list({ includeInactive: false, ids: auth.isOwner ? undefined : auth.branchIds });
+    const list = await branches.list(auth.businessId, { includeInactive: false, ids: auth.branchIds });
     return {
+      businessId: auth.businessId,
       branchIds: list.map((b) => b.id),
       label: "All branches",
       branches: list.map(pick),
@@ -28,9 +31,9 @@ export async function resolveBranchScope(
   const id = requested ?? currentBranchId;
   if (!id) throw badRequest("Choose a branch");
   if (!canAccessBranch(auth, id)) throw forbidden("You don't have access to this branch");
-  const branch = await branches.findById(id);
+  const branch = await branches.findById(auth.businessId, id);
   if (!branch) throw badRequest("Branch not found");
-  return { branchIds: [id], label: branch.name, branches: [pick(branch)] };
+  return { businessId: auth.businessId, branchIds: [id], label: branch.name, branches: [pick(branch)] };
 }
 
 const pick = (b: { id: string; code: string; name: string; stateCode: string; gstin: string | null }) => ({

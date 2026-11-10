@@ -32,22 +32,38 @@ const toDto = (row: CustomerRow): CustomerResponseDto => ({ ...row, creditLimit:
 export class CustomerRepository implements ICustomerRepository {
   constructor(@inject(TYPES.PrismaClient) private readonly prisma: PrismaClient) {}
 
-  async findById(id: string): Promise<CustomerResponseDto | null> {
-    const row = await this.prisma.customer.findFirst({ where: { id, deletedAt: null }, select: customerSelect });
-    return row && toDto(row);
-  }
-
-  async findByMobile(mobile: string, excludeId?: string): Promise<CustomerResponseDto | null> {
+  async findById(businessId: string, id: string): Promise<CustomerResponseDto | null> {
     const row = await this.prisma.customer.findFirst({
-      where: { mobile, deletedAt: null, ...(excludeId && { id: { not: excludeId } }) },
+      where: { id, businessId, deletedAt: null },
       select: customerSelect,
     });
     return row && toDto(row);
   }
 
-  async list({ page, limit, search, type, sort }: ListCustomersQuery): Promise<Paginated<CustomerResponseDto>> {
+  async findByMobile(businessId: string, mobile: string, excludeId?: string): Promise<CustomerResponseDto | null> {
+    const row = await this.prisma.customer.findFirst({
+      where: { businessId, mobile, deletedAt: null, ...(excludeId && { id: { not: excludeId } }) },
+      select: customerSelect,
+    });
+    return row && toDto(row);
+  }
+
+  async findByEmail(businessId: string, email: string): Promise<CustomerResponseDto | null> {
+    const row = await this.prisma.customer.findFirst({
+      where: { businessId, deletedAt: null, email: { equals: email, mode: "insensitive" } },
+      orderBy: { createdAt: "asc" },
+      select: customerSelect,
+    });
+    return row && toDto(row);
+  }
+
+  async list(
+    businessId: string,
+    { page, limit, search, type, sort }: ListCustomersQuery,
+  ): Promise<Paginated<CustomerResponseDto>> {
     const digits = search?.replace(/\D/g, "");
     const where: Prisma.CustomerWhereInput = {
+      businessId,
       deletedAt: null,
       type,
       ...(search && {
@@ -68,19 +84,19 @@ export class CustomerRepository implements ICustomerRepository {
     return { data: rows.map(toDto), page, limit, total };
   }
 
-  async create(data: CreateCustomerData): Promise<CustomerResponseDto> {
-    return toDto(await this.prisma.customer.create({ data, select: customerSelect }));
+  async create(businessId: string, data: CreateCustomerData): Promise<CustomerResponseDto> {
+    return toDto(await this.prisma.customer.create({ data: { ...data, businessId }, select: customerSelect }));
   }
 
-  async update(id: string, data: UpdateCustomerDto): Promise<CustomerResponseDto | null> {
-    const { count } = await this.prisma.customer.updateMany({ where: { id, deletedAt: null }, data });
+  async update(businessId: string, id: string, data: UpdateCustomerDto): Promise<CustomerResponseDto | null> {
+    const { count } = await this.prisma.customer.updateMany({ where: { id, businessId, deletedAt: null }, data });
     if (count === 0) return null;
-    return this.findById(id);
+    return this.findById(businessId, id);
   }
 
-  async softDelete(id: string): Promise<boolean> {
+  async softDelete(businessId: string, id: string): Promise<boolean> {
     const { count } = await this.prisma.customer.updateMany({
-      where: { id, deletedAt: null },
+      where: { id, businessId, deletedAt: null },
       data: { deletedAt: new Date() },
     });
     return count > 0;

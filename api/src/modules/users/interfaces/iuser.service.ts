@@ -21,8 +21,9 @@ export interface IUserService {
   getMe(auth: AuthContext): Promise<MeResponseDto>;
   updateMe(auth: AuthContext, input: UpdateProfileDto): Promise<UserResponseDto>;
   create(auth: AuthContext, input: CreateUserDto): Promise<UserResponseDto>;
-  list(query: ListUsersQuery): Promise<Paginated<UserResponseDto>>;
-  getById(id: string): Promise<UserResponseDto>;
+  list(auth: AuthContext, query: ListUsersQuery): Promise<Paginated<UserResponseDto>>;
+  getById(businessId: string, id: string): Promise<UserResponseDto>;
   update(auth: AuthContext, id: string, input: UpdateUserDto): Promise<UserResponseDto>;
+  setPassword(auth: AuthContext, id: string, password: string): Promise<void>;
   remove(auth: AuthContext, id: string): Promise<void>;
 }

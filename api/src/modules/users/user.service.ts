@@ -7,10 +7,12 @@ import { TYPES } from "../../config/ioc.types";
 import { env } from "../../config/env";
 import { BCRYPT_ROUNDS } from "../../common/constants";
 import type { AuthContext } from "../../common/auth-context";
-import { badRequest, conflict, fieldErrors, forbidden, notFound, unauthorized } from "../../common/http-error";
+import { badRequest, fieldErrors, forbidden, notFound, unauthorized } from "../../common/http-error";
 import type { Paginated } from "../../common/pagination";
 import type { IAuditService } from "../audit/interfaces/iaudit.service";
 import type { IBranchRepository } from "../branches/interfaces/ibranch.repository";
+import type { IBusinessRepository } from "../business/interfaces/ibusiness.repository";
+import { assertBusinessActive } from "../../common/tenant";
 import type { IRoleRepository } from "../roles/interfaces/irole.repository";
 import type { RoleResponseDto } from "../roles/role.types";
 import type { IRefreshTokenRepository } from "./interfaces/irefresh-token.repository";
@@ -32,7 +34,7 @@ import type {
 // Compared against when the email is unknown so login takes the same time either way.
 const DUMMY_HASH = bcrypt.hashSync("dummy-password-for-timing", BCRYPT_ROUNDS);
 
-const INVALID_CREDENTIALS = "Invalid email or password";
+const INVALID_CREDENTIALS = "Username or password is incorrect";
 const INVALID_REFRESH_TOKEN = "Invalid or expired refresh token";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -46,20 +48,26 @@ export class UserService implements IUserService {
     @inject(TYPES.RefreshTokenRepository) private readonly refreshTokens: IRefreshTokenRepository,
     @inject(TYPES.RoleRepository) private readonly roles: IRoleRepository,
     @inject(TYPES.BranchRepository) private readonly branches: IBranchRepository,
+    @inject(TYPES.BusinessRepository) private readonly business: IBusinessRepository,
     @inject(TYPES.AuditService) private readonly audit: IAuditService,
   ) {}
 
-  async login({ email, password }: LoginDto, ip?: string): Promise<AuthResponseDto> {
-    const found = await this.users.findCredentialsByEmail(email);
+  async login({ identifier, password }: LoginDto, ip?: string): Promise<AuthResponseDto> {
+    const found = await this.users.findCredentialsByIdentifier(identifier);
     const valid = await bcrypt.compare(password, found?.passwordHash ?? DUMMY_HASH);
 
     if (!found || !valid || found.status !== "ACTIVE") {
       throw unauthorized(INVALID_CREDENTIALS);
     }
+    // Only after the password matched, so the shop's status is not revealed to strangers.
+    assertBusinessActive(found.businessStatus);
 
     await this.users.touchLastLogin(found.id);
-    await this.audit.record({ userId: found.id, ip }, { action: "auth.login", entity: "User", entityId: found.id });
-    const user = await this.getById(found.id);
+    await this.audit.record(
+      { userId: found.id, businessId: found.businessId, ip },
+      { action: "auth.login", entity: "User", entityId: found.id },
+    );
+    const user = await this.getById(found.businessId, found.id);
     return { user, ...(await this.issueTokens(user.id)) };
   }
 
@@ -75,8 +83,9 @@ export class UserService implements IUserService {
     }
     if (stored.expiresAt <= new Date()) throw unauthorized(INVALID_REFRESH_TOKEN);
 
-    const user = await this.users.findById(stored.userId);
+    const user = await this.users.findCredentialsById(stored.userId);
     if (!user || user.status !== "ACTIVE") throw unauthorized(INVALID_REFRESH_TOKEN);
+    assertBusinessActive(user.businessStatus);
 
     return this.issueTokens(user.id);
   }
@@ -104,13 +113,15 @@ export class UserService implements IUserService {
   }
 
   async getMe(auth: AuthContext): Promise<MeResponseDto> {
-    const user = await this.getById(auth.userId);
-    const branches = await this.branches.list({
-      includeInactive: false,
-      ids: auth.isOwner ? undefined : auth.branchIds,
-    });
+    const [user, branches, business] = await Promise.all([
+      this.getById(auth.businessId, auth.userId),
+      this.branches.list(auth.businessId, { includeInactive: false, ids: auth.branchIds }),
+      this.business.getSummary(auth.businessId),
+    ]);
+    if (!business) throw notFound("Business not found");
     return {
       user,
+      business,
       isOwner: auth.isOwner,
       permissions: auth.isOwner ? [...PERMISSIONS] : auth.permissions,
       branches: branches.map(({ id, code, name, stateCode, city }) => ({ id, code, name, stateCode, city })),
@@ -118,42 +129,45 @@ export class UserService implements IUserService {
   }
 
   async updateMe(auth: AuthContext, input: UpdateProfileDto): Promise<UserResponseDto> {
-    const user = await this.users.update(auth.userId, input);
+    const user = await this.users.update(auth.businessId, auth.userId, input);
     if (!user) throw notFound("User not found");
     return user;
   }
 
   async create(auth: AuthContext, { password, ...input }: CreateUserDto): Promise<UserResponseDto> {
-    // The unique index also covers soft-deleted rows; the error handler maps P2002 on races.
-    if (await this.users.existsByEmail(input.email)) {
-      throw conflict("This email is already registered");
-    }
+    await this.assertContactFree(input.mobile, input.email);
     await this.assertCanAssign(auth, input.roleId, input.branchIds);
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
-    const user = await this.users.create({ ...input, passwordHash });
+    const user = await this.users.create(auth.businessId, { ...input, passwordHash });
     await this.audit.record(auth, { action: "user.create", entity: "User", entityId: user.id, after: user });
     return user;
   }
 
-  list(query: ListUsersQuery): Promise<Paginated<UserResponseDto>> {
-    return this.users.list(query);
+  list(auth: AuthContext, query: ListUsersQuery): Promise<Paginated<UserResponseDto>> {
+    return this.users.list(auth.businessId, query);
   }
 
-  async getById(id: string): Promise<UserResponseDto> {
-    const user = await this.users.findById(id);
+  async getById(businessId: string, id: string): Promise<UserResponseDto> {
+    const user = await this.users.findById(businessId, id);
     if (!user) throw notFound("User not found");
     return user;
   }
 
   async update(auth: AuthContext, id: string, input: UpdateUserDto): Promise<UserResponseDto> {
-    const before = await this.getById(id);
+    const before = await this.getById(auth.businessId, id);
     const isSelf = id === auth.userId;
     const targetIsOwner = before.role.key === "OWNER";
 
     if (targetIsOwner && !auth.isOwner) throw forbidden("Only an owner can change an owner's account");
     if (isSelf && input.roleId && input.roleId !== before.role.id) throw badRequest("You cannot change your own role");
     if (isSelf && input.status && input.status !== "ACTIVE") throw badRequest("You cannot deactivate your own account");
+
+    await this.assertContactFree(input.mobile, input.email, id);
+    if (input.email !== undefined && input.email !== before.email) {
+      // A changed email has to be verified again before reset links go to it.
+      (input as UpdateUserDto & { emailVerifiedAt?: Date | null }).emailVerifiedAt = null;
+    }
 
     if (input.roleId !== undefined || input.branchIds !== undefined) {
       await this.assertCanAssign(
@@ -168,11 +182,11 @@ export class UserService implements IUserService {
       targetIsOwner &&
       before.status === "ACTIVE" &&
       ((input.status && input.status !== "ACTIVE") || (input.roleId && input.roleId !== before.role.id));
-    if (losesOwnership && (await this.users.countActiveOwners(id)) === 0) {
+    if (losesOwnership && (await this.users.countActiveOwners(auth.businessId, id)) === 0) {
       throw badRequest("At least one active owner is required");
     }
 
-    const user = await this.users.update(id, input);
+    const user = await this.users.update(auth.businessId, id, input);
     if (!user) throw notFound("User not found");
     if (user.status !== "ACTIVE") await this.refreshTokens.revokeAllForUser(id);
 
@@ -180,26 +194,42 @@ export class UserService implements IUserService {
     return user;
   }
 
+  // An owner or manager sets a new temporary password for a staff member (staff often have no email to reset it).
+  async setPassword(auth: AuthContext, id: string, password: string): Promise<void> {
+    if (id === auth.userId) throw badRequest("Change your own password from My profile");
+    const target = await this.getById(auth.businessId, id);
+    if (target.role.key === "OWNER" && !auth.isOwner) throw forbidden("Only an owner can change an owner's password");
+    if (!auth.isOwner && !target.branches.some((b) => auth.branchIds.includes(b.id))) {
+      throw forbidden("You can only change passwords of users in your branches");
+    }
+    await this.users.updatePasswordHash(id, await bcrypt.hash(password, BCRYPT_ROUNDS));
+    // Signs them out everywhere, so the old password stops working on every device.
+    await this.refreshTokens.revokeAllForUser(id);
+    await this.audit.record(auth, { action: "user.password.set", entity: "User", entityId: id });
+  }
+
   async remove(auth: AuthContext, id: string): Promise<void> {
     if (id === auth.userId) throw badRequest("You cannot delete your own account");
-    const before = await this.getById(id);
+    const before = await this.getById(auth.businessId, id);
     if (before.role.key === "OWNER") {
       if (!auth.isOwner) throw forbidden("Only an owner can delete an owner's account");
-      if ((await this.users.countActiveOwners(id)) === 0) throw badRequest("At least one active owner is required");
+      if ((await this.users.countActiveOwners(auth.businessId, id)) === 0) {
+        throw badRequest("At least one active owner is required");
+      }
     }
 
-    await this.users.softDelete(id);
+    await this.users.softDelete(auth.businessId, id);
     await this.refreshTokens.revokeAllForUser(id);
     await this.audit.record(auth, { action: "user.delete", entity: "User", entityId: id, before });
   }
 
   // Non-owners can only hand out roles within their own permissions, and only their own branches.
   private async assertCanAssign(auth: AuthContext, roleId: string, branchIds: string[]): Promise<RoleResponseDto> {
-    const role = await this.roles.findById(roleId);
+    const role = await this.roles.findById(auth.businessId, roleId);
     if (!role) throw fieldErrors([{ path: "roleId", message: "Role not found" }]);
 
     const uniqueBranchIds = [...new Set(branchIds)];
-    const found = await this.branches.findManyByIds(uniqueBranchIds);
+    const found = await this.branches.findManyByIds(auth.businessId, uniqueBranchIds);
     if (found.length !== uniqueBranchIds.length) throw fieldErrors([{ path: "branchIds", message: "Unknown branch" }]);
 
     if (role.key !== "OWNER" && uniqueBranchIds.length === 0) {
@@ -215,6 +245,17 @@ export class UserService implements IUserService {
       }
     }
     return role;
+  }
+
+  // Mobile and email identify a person across every company, so they must be free everywhere.
+  // The unique indexes also cover soft-deleted rows; the error handler maps P2002 on races.
+  private async assertContactFree(mobile?: string | null, email?: string | null, excludeId?: string) {
+    if (mobile && (await this.users.existsByMobile(mobile, excludeId))) {
+      throw fieldErrors([{ path: "mobile", message: "This mobile number is already registered" }]);
+    }
+    if (email && (await this.users.existsByEmail(email, excludeId))) {
+      throw fieldErrors([{ path: "email", message: "This email is already registered" }]);
+    }
   }
 
   private async issueTokens(userId: string): Promise<TokenPair> {

@@ -19,29 +19,35 @@ const branchSelect = {
   updatedAt: true,
 } satisfies Prisma.BranchSelect;
 
+type Db = PrismaClient | Prisma.TransactionClient;
+
 @injectable()
 export class BranchRepository implements IBranchRepository {
   constructor(@inject(TYPES.PrismaClient) private readonly prisma: PrismaClient) {}
 
-  findById(id: string): Promise<BranchResponseDto | null> {
-    return this.prisma.branch.findFirst({ where: { id, deletedAt: null }, select: branchSelect });
+  findById(businessId: string, id: string): Promise<BranchResponseDto | null> {
+    return this.prisma.branch.findFirst({ where: { id, businessId, deletedAt: null }, select: branchSelect });
   }
 
-  async existsByCode(code: string, excludeId?: string): Promise<boolean> {
+  async existsByCode(businessId: string, code: string, excludeId?: string): Promise<boolean> {
     const found = await this.prisma.branch.findFirst({
-      where: { code, ...(excludeId && { id: { not: excludeId } }) },
+      where: { businessId, code, ...(excludeId && { id: { not: excludeId } }) },
       select: { id: true },
     });
     return found !== null;
   }
 
-  findManyByIds(ids: string[]): Promise<BranchResponseDto[]> {
-    return this.prisma.branch.findMany({ where: { id: { in: ids }, deletedAt: null }, select: branchSelect });
+  findManyByIds(businessId: string, ids: string[]): Promise<BranchResponseDto[]> {
+    return this.prisma.branch.findMany({
+      where: { id: { in: ids }, businessId, deletedAt: null },
+      select: branchSelect,
+    });
   }
 
-  list({ ids, includeInactive, search }: BranchListFilter): Promise<BranchResponseDto[]> {
+  list(businessId: string, { ids, includeInactive, search }: BranchListFilter): Promise<BranchResponseDto[]> {
     return this.prisma.branch.findMany({
       where: {
+        businessId,
         deletedAt: null,
         ...(ids && { id: { in: ids } }),
         ...(!includeInactive && { isActive: true }),
@@ -58,23 +64,23 @@ export class BranchRepository implements IBranchRepository {
     });
   }
 
-  countActive(): Promise<number> {
-    return this.prisma.branch.count({ where: { deletedAt: null, isActive: true } });
+  countActive(businessId: string): Promise<number> {
+    return this.prisma.branch.count({ where: { businessId, deletedAt: null, isActive: true } });
   }
 
-  create(data: CreateBranchDto): Promise<BranchResponseDto> {
-    return this.prisma.branch.create({ data, select: branchSelect });
+  create(businessId: string, data: CreateBranchDto, db: Db = this.prisma): Promise<BranchResponseDto> {
+    return db.branch.create({ data: { ...data, businessId }, select: branchSelect });
   }
 
-  async update(id: string, data: UpdateBranchDto): Promise<BranchResponseDto | null> {
-    const { count } = await this.prisma.branch.updateMany({ where: { id, deletedAt: null }, data });
+  async update(businessId: string, id: string, data: UpdateBranchDto): Promise<BranchResponseDto | null> {
+    const { count } = await this.prisma.branch.updateMany({ where: { id, businessId, deletedAt: null }, data });
     if (count === 0) return null;
-    return this.findById(id);
+    return this.findById(businessId, id);
   }
 
-  async softDelete(id: string): Promise<boolean> {
+  async softDelete(businessId: string, id: string): Promise<boolean> {
     const { count } = await this.prisma.branch.updateMany({
-      where: { id, deletedAt: null },
+      where: { id, businessId, deletedAt: null },
       data: { deletedAt: new Date(), isActive: false },
     });
     return count > 0;

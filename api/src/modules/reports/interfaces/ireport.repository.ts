@@ -38,5 +38,5 @@ export interface IReportRepository {
   stockValuation(branchIds: string[]): Promise<StockValuationRow[]>;
   stockMovement(branchIds: string[], p: Period): Promise<StockMovementRow[]>;
   customerPayments(branchIds: string[], p: Period): Promise<CustomerPaymentRow[]>;
-  businessName(): Promise<{ legalName: string; gstin: string | null }>;
+  businessName(businessId: string): Promise<{ legalName: string; gstin: string | null }>;
 }

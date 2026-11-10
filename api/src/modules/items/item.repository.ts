@@ -148,13 +148,17 @@ const exactWhere = (term: string): Prisma.ItemWhereInput => ({
 export class ItemRepository implements IItemRepository {
   constructor(@inject(TYPES.PrismaClient) private readonly prisma: PrismaClient) {}
 
-  async findById(id: string, branchId?: string): Promise<ItemResponseDto | null> {
-    const row = await this.prisma.item.findFirst({ where: { id, deletedAt: null }, select: itemSelect(branchId) });
+  async findById(businessId: string, id: string, branchId?: string): Promise<ItemResponseDto | null> {
+    const row = await this.prisma.item.findFirst({
+      where: { id, businessId, deletedAt: null },
+      select: itemSelect(branchId),
+    });
     return row && toDto(row, branchId);
   }
 
-  async list(q: ListItemsQuery, branchId?: string): Promise<Paginated<ItemResponseDto>> {
+  async list(businessId: string, q: ListItemsQuery, branchId?: string): Promise<Paginated<ItemResponseDto>> {
     const where: Prisma.ItemWhereInput = {
+      businessId,
       deletedAt: null,
       categoryId: q.categoryId,
       brandId: q.brandId,
@@ -176,8 +180,8 @@ export class ItemRepository implements IItemRepository {
     return { data: rows.map((r) => toDto(r, branchId)), page: q.page, limit: q.limit, total };
   }
 
-  async search(term: string, limit: number, branchId?: string): Promise<ItemSearchResultDto[]> {
-    const base: Prisma.ItemWhereInput = { deletedAt: null, isActive: true };
+  async search(businessId: string, term: string, limit: number, branchId?: string): Promise<ItemSearchResultDto[]> {
+    const base: Prisma.ItemWhereInput = { businessId, deletedAt: null, isActive: true };
     const select = searchSelect(branchId);
     // Exact SKU / OEM / barcode hits first, so a scanned or typed code is always on top.
     const [exact, fuzzy] = await Promise.all([
@@ -196,9 +200,10 @@ export class ItemRepository implements IItemRepository {
       .map((r) => toSearchDto(r, branchId, term));
   }
 
-  async findByCode(code: string, branchId?: string): Promise<ItemSearchResultDto | null> {
+  async findByCode(businessId: string, code: string, branchId?: string): Promise<ItemSearchResultDto | null> {
     const row = await this.prisma.item.findFirst({
       where: {
+        businessId,
         deletedAt: null,
         OR: [{ barcodes: { some: { code } } }, { sku: { equals: code, mode: "insensitive" } }],
       },
@@ -207,9 +212,10 @@ export class ItemRepository implements IItemRepository {
     return row && toSearchDto(row, branchId, code);
   }
 
-  findSkuOwner(sku: string, excludeId?: string) {
+  findSkuOwner(businessId: string, sku: string, excludeId?: string) {
     return this.prisma.item.findFirst({
       where: {
+        businessId,
         deletedAt: null,
         sku: { equals: sku, mode: "insensitive" },
         ...(excludeId && { id: { not: excludeId } }),
@@ -218,40 +224,45 @@ export class ItemRepository implements IItemRepository {
     });
   }
 
-  async findBarcodeOwners(codes: string[], excludeId?: string) {
+  async findBarcodeOwners(businessId: string, codes: string[], excludeId?: string) {
     if (!codes.length) return [];
     const rows = await this.prisma.itemBarcode.findMany({
-      where: { code: { in: codes }, item: { deletedAt: null, ...(excludeId && { id: { not: excludeId } }) } },
+      where: {
+        businessId,
+        code: { in: codes },
+        item: { deletedAt: null, ...(excludeId && { id: { not: excludeId } }) },
+      },
       select: { code: true, itemId: true, item: { select: { name: true } } },
     });
     return rows.map((r) => ({ code: r.code, itemId: r.itemId, itemName: r.item.name }));
   }
 
-  async countActiveModels(ids: string[]): Promise<number> {
+  async countActiveModels(businessId: string, ids: string[]): Promise<number> {
     if (!ids.length) return 0;
-    return this.prisma.vehicleModel.count({ where: { id: { in: ids }, deletedAt: null } });
+    return this.prisma.vehicleModel.count({ where: { businessId, id: { in: ids }, deletedAt: null } });
   }
 
-  async create(data: ItemWriteData, db: Db = this.prisma): Promise<{ id: string }> {
+  async create(businessId: string, data: ItemWriteData, db: Db = this.prisma): Promise<{ id: string }> {
     const { barcodes = [], compatibleModelIds = [], ...scalars } = data;
     return db.item.create({
       data: {
         ...(scalars as Prisma.ItemUncheckedCreateInput),
-        barcodes: { create: barcodes.map((code) => ({ code })) },
+        businessId,
+        barcodes: { create: barcodes.map((code) => ({ code, businessId })) },
         compatibility: { create: compatibleModelIds.map((vehicleModelId) => ({ vehicleModelId })) },
       },
       select: { id: true },
     });
   }
 
-  async update(id: string, data: ItemWriteData, db?: Db): Promise<boolean> {
+  async update(businessId: string, id: string, data: ItemWriteData, db?: Db): Promise<boolean> {
     const { barcodes, compatibleModelIds, ...scalars } = data;
     const work = async (tx: Db) => {
-      const { count } = await tx.item.updateMany({ where: { id, deletedAt: null }, data: scalars });
+      const { count } = await tx.item.updateMany({ where: { id, businessId, deletedAt: null }, data: scalars });
       if (!count) return false;
       if (barcodes) {
         await tx.itemBarcode.deleteMany({ where: { itemId: id } });
-        await tx.itemBarcode.createMany({ data: barcodes.map((code) => ({ itemId: id, code })) });
+        await tx.itemBarcode.createMany({ data: barcodes.map((code) => ({ itemId: id, code, businessId })) });
       }
       if (compatibleModelIds) {
         await tx.itemCompatibility.deleteMany({ where: { itemId: id } });
@@ -264,9 +275,9 @@ export class ItemRepository implements IItemRepository {
     return db ? work(db) : this.prisma.$transaction((tx) => work(tx));
   }
 
-  async softDelete(id: string): Promise<boolean> {
+  async softDelete(businessId: string, id: string): Promise<boolean> {
     const { count } = await this.prisma.item.updateMany({
-      where: { id, deletedAt: null },
+      where: { id, businessId, deletedAt: null },
       data: { deletedAt: new Date() },
     });
     return count > 0;
@@ -283,10 +294,10 @@ export class ItemRepository implements IItemRepository {
     return this.prisma.branchStock.findMany({ where: { itemId }, select: stockSelect });
   }
 
-  async findBySkus(skus: string[]) {
+  async findBySkus(businessId: string, skus: string[]) {
     if (!skus.length) return [];
     return this.prisma.item.findMany({
-      where: { deletedAt: null, sku: { in: skus } },
+      where: { businessId, deletedAt: null, sku: { in: skus } },
       select: { id: true, sku: true, name: true, purchasePrice: true },
     });
   }

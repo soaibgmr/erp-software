@@ -21,8 +21,8 @@ export class CartPricer implements ICartPricer {
     @inject(TYPES.SettingsService) private readonly settings: ISettingsService,
   ) {}
 
-  async customerCredit(customerId: string): Promise<CustomerCredit> {
-    const c = await this.customers.findById(customerId);
+  async customerCredit(auth: AuthContext, customerId: string): Promise<CustomerCredit> {
+    const c = await this.customers.findById(auth.businessId, customerId);
     if (!c) throw notFound("Customer not found");
     const outstanding = await this.invoices.customerOutstanding(customerId);
     const limit = toPaise(c.creditLimit);
@@ -31,6 +31,7 @@ export class CartPricer implements ICartPricer {
       type: c.type,
       name: c.name,
       mobile: c.mobile,
+      email: c.email,
       gstin: c.gstin,
       address: [c.address, c.city, c.pincode].filter(Boolean).join(", ") || null,
       stateCode: c.stateCode,
@@ -42,17 +43,17 @@ export class CartPricer implements ICartPricer {
   }
 
   async price(auth: AuthContext, branchId: string, input: QuoteDtoInput): Promise<PricedCartResult> {
-    const branch = await this.branches.findById(branchId);
+    const branch = await this.branches.findById(auth.businessId, branchId);
     if (!branch) throw notFound("Branch not found");
-    const customer = input.customerId ? await this.customerCredit(input.customerId).catch(() => null) : null;
+    const customer = input.customerId ? await this.customerCredit(auth, input.customerId).catch(() => null) : null;
     if (input.customerId && !customer) throw fieldErrors([{ path: "customerId", message: "Customer not found" }]);
 
     const itemIds = input.lines.flatMap((l) => (l.kind === "ITEM" ? [l.itemId] : []));
     const labourIds = input.lines.flatMap((l) => (l.kind === "LABOUR" ? [l.labourServiceId] : []));
     const [items, labour, pos] = await Promise.all([
-      this.invoices.findSaleItems(itemIds, branchId),
-      this.invoices.findSaleLabour(labourIds),
-      this.settings.get("pos"),
+      this.invoices.findSaleItems(auth.businessId, itemIds, branchId),
+      this.invoices.findSaleLabour(auth.businessId, labourIds),
+      this.settings.get(auth.businessId, "pos"),
     ]);
     const itemById = new Map(items.map((i) => [i.id, i]));
     const labourById = new Map(labour.map((l) => [l.id, l]));

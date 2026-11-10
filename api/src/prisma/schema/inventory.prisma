@@ -3,6 +3,7 @@
 
 model ItemCategory {
   id          String    @id @default(uuid()) @db.Uuid
+  businessId  String    @map("business_id") @db.Uuid
   name        String    @db.VarChar(80)
   description String?   @db.VarChar(200)
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -11,19 +12,26 @@ model ItemCategory {
 
   items Item[]
 
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@index([businessId])
   @@index([name])
   @@map("item_categories")
 }
 
 model Brand {
-  id        String    @id @default(uuid()) @db.Uuid
-  name      String    @db.VarChar(80)
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  id         String    @id @default(uuid()) @db.Uuid
+  businessId String    @map("business_id") @db.Uuid
+  name       String    @db.VarChar(80)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(3)
 
   items Item[]
 
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@index([businessId])
   @@index([name])
   @@map("brands")
 }
@@ -38,6 +46,7 @@ enum HsnSacKind {
 // HSN (goods) and SAC (services) codes with their default GST rate.
 model HsnSac {
   id          String     @id @default(uuid()) @db.Uuid
+  businessId  String     @map("business_id") @db.Uuid
   code        String     @db.VarChar(8)
   kind        HsnSacKind @default(HSN)
   description String     @db.VarChar(300)
@@ -46,34 +55,45 @@ model HsnSac {
   updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt   DateTime?  @map("deleted_at") @db.Timestamptz(3)
 
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@index([businessId])
   @@index([code])
   @@map("hsn_sac_codes")
 }
 
 model VehicleMake {
-  id        String    @id @default(uuid()) @db.Uuid
-  name      String    @db.VarChar(60)
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  id         String    @id @default(uuid()) @db.Uuid
+  businessId String    @map("business_id") @db.Uuid
+  name       String    @db.VarChar(60)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(3)
 
   models VehicleModel[]
 
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@index([businessId])
   @@index([name])
   @@map("vehicle_makes")
 }
 
 model VehicleModel {
-  id        String    @id @default(uuid()) @db.Uuid
-  makeId    String    @map("make_id") @db.Uuid
-  name      String    @db.VarChar(80)
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  id         String    @id @default(uuid()) @db.Uuid
+  businessId String    @map("business_id") @db.Uuid
+  makeId     String    @map("make_id") @db.Uuid
+  name       String    @db.VarChar(80)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(3)
 
   make          VehicleMake         @relation(fields: [makeId], references: [id])
   compatibility ItemCompatibility[]
 
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@index([businessId])
   @@index([makeId])
   @@map("vehicle_models")
 }
@@ -100,6 +120,7 @@ enum ItemUnit {
 // name/sku/oem_part_no carry trigram indexes for the POS search.
 model Item {
   id            String    @id @default(uuid()) @db.Uuid
+  businessId    String    @map("business_id") @db.Uuid
   sku           String    @db.VarChar(40)
   name          String    @db.VarChar(200)
   oemPartNo     String?   @map("oem_part_no") @db.VarChar(60)
@@ -126,6 +147,9 @@ model Item {
   stock         BranchStock[]
   ledger        StockLedger[]
 
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@index([businessId])
   @@index([sku])
   @@index([oemPartNo])
   @@index([categoryId])
@@ -137,14 +161,18 @@ model Item {
 }
 
 model ItemBarcode {
-  id        String   @id @default(uuid()) @db.Uuid
-  itemId    String   @map("item_id") @db.Uuid
-  code      String   @db.VarChar(64)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  id         String   @id @default(uuid()) @db.Uuid
+  businessId String   @map("business_id") @db.Uuid
+  itemId     String   @map("item_id") @db.Uuid
+  code       String   @db.VarChar(64)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
+  business Business @relation(fields: [businessId], references: [id])
+
   @@unique([itemId, code])
+  @@index([businessId])
   @@index([code])
   @@map("item_barcodes")
 }
@@ -163,6 +191,7 @@ model ItemCompatibility {
 
 model LabourService {
   id            String    @id @default(uuid()) @db.Uuid
+  businessId    String    @map("business_id") @db.Uuid
   code          String?   @db.VarChar(20)
   name          String    @db.VarChar(150)
   sacCode       String    @map("sac_code") @db.VarChar(8)
@@ -174,6 +203,9 @@ model LabourService {
   updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(3)
 
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@index([businessId])
   @@index([name])
   @@map("labour_services")
 }

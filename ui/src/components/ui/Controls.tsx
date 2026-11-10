@@ -29,7 +29,8 @@ export function SegmentedControl<T extends string>({
           aria-checked={value === o.value}
           onClick={() => onChange(o.value)}
           className={cn(
-            "h-8 min-w-12 flex-1 whitespace-nowrap rounded-[5px] px-3 text-body font-medium transition-colors",
+            // flex-auto (not flex-1): each option is at least as wide as its label, so labels never get cut off.
+            "h-8 min-w-12 flex-auto whitespace-nowrap rounded-[5px] px-3 text-body font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-navy-600/40",
             value === o.value ? "bg-navy-900 text-white" : "text-slate hover:text-ink",
           )}
         >

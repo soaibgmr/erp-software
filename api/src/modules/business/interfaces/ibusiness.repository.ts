@@ -1,7 +1,8 @@
-import type { BusinessResponseDto, UpdateBusinessDto } from "../business.types";
+import type { BusinessResponseDto, BusinessSummary, UpdateBusinessDto } from "../business.types";
 
 export interface IBusinessRepository {
-  // The single business row, or null before the seed has run.
-  get(): Promise<BusinessResponseDto | null>;
+  get(id: string): Promise<BusinessResponseDto | null>;
+  // Display name (trade name, else legal name) and status.
+  getSummary(id: string): Promise<BusinessSummary | null>;
   update(id: string, data: UpdateBusinessDto): Promise<BusinessResponseDto>;
 }

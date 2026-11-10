@@ -6,12 +6,13 @@ import type {
   UpdateLabourServiceDto,
 } from "../labour-service.types";
 
+// Labour services belong to one business; every method is limited to it.
 export interface ILabourServiceRepository {
-  findById(id: string): Promise<LabourServiceResponseDto | null>;
+  findById(businessId: string, id: string): Promise<LabourServiceResponseDto | null>;
   // Active service with this name (case-insensitive).
-  findByName(name: string, excludeId?: string): Promise<{ id: string } | null>;
-  list(query: ListLabourServicesQuery): Promise<Paginated<LabourServiceResponseDto>>;
-  create(data: CreateLabourServiceDto): Promise<LabourServiceResponseDto>;
-  update(id: string, data: UpdateLabourServiceDto): Promise<LabourServiceResponseDto | null>;
-  softDelete(id: string): Promise<boolean>;
+  findByName(businessId: string, name: string, excludeId?: string): Promise<{ id: string } | null>;
+  list(businessId: string, query: ListLabourServicesQuery): Promise<Paginated<LabourServiceResponseDto>>;
+  create(businessId: string, data: CreateLabourServiceDto): Promise<LabourServiceResponseDto>;
+  update(businessId: string, id: string, data: UpdateLabourServiceDto): Promise<LabourServiceResponseDto | null>;
+  softDelete(businessId: string, id: string): Promise<boolean>;
 }
