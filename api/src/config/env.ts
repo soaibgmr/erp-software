@@ -46,7 +46,8 @@ const envSchema = z
     LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
 
     // Public URL of the UI; links in emails (verify email, reset password) point here.
-    APP_URL: z.url().default("http://localhost:5173"),
+    // When unset, the first CORS_ORIGIN is used (that is the UI's URL in every environment).
+    APP_URL: z.url().optional(),
     // Product name shown in emails.
     APP_NAME: z.string().default("ERP Software"),
 
@@ -73,6 +74,9 @@ if (!parsed.success) {
   process.exit(1);
 }
 
-export const env = parsed.data;
+export const env = {
+  ...parsed.data,
+  APP_URL: parsed.data.APP_URL ?? parsed.data.CORS_ORIGIN[0] ?? "http://localhost:5173",
+};
 export const isProduction = env.NODE_ENV === "production";
 export const isSwaggerEnabled = env.SWAGGER_ENABLED ?? !isProduction;
