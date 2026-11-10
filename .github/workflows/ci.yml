@@ -1,9 +1,18 @@
-name: CI
+name: CI/CD
+
+# Every PR and every push to main runs the checks.
+# A push to main that passes the checks then:
+#   1. applies Prisma migrations to the live (Supabase) database,
+#   2. deploys the API to Vercel production,
+#   3. deploys the UI to Vercel production.
+# Vercel's own Git auto-deploy for main is switched off in api/vercel.json and ui/vercel.json,
+# so production only ever gets code that passed CI, and the schema is migrated before the new API goes live.
 
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   check:
@@ -21,3 +30,57 @@ jobs:
       # Tests use in-memory fakes and api/vitest.config.mts env; no database needed.
       - run: npm test
       - run: npm run build
+
+  migrate:
+    needs: check
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Direct (non-pooled, port 5432) Supabase connection; prisma.config.ts reads DIRECT_URL.
+      - name: Apply migrations to live
+        working-directory: api
+        env:
+          APP_ENV: live
+          NODE_ENV: production
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: npx prisma migrate deploy
+
+  deploy:
+    needs: migrate
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: production-deploy-${{ matrix.app }}
+      cancel-in-progress: false
+    strategy:
+      # API first, then UI, so the UI never calls an API that is older than it.
+      max-parallel: 1
+      matrix:
+        include:
+          - app: api
+            project_secret: VERCEL_PROJECT_ID_API
+          - app: ui
+            project_secret: VERCEL_PROJECT_ID_UI
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets[matrix.project_secret] }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --global vercel@latest
+      # Run from the repo root: the Vercel project's Root Directory (api/ or ui/) picks the app,
+      # and Vercel builds it remotely with the settings in <app>/vercel.json, same as before.
+      - name: Deploy ${{ matrix.app }} to production
+        run: vercel deploy --prod --yes --archive=tgz --token=${{ secrets.VERCEL_TOKEN }}
