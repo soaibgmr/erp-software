@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Builds packages/shared first, then typechecks api and ui.
+      - run: npm run typecheck
+      - run: npm run lint
+      # Tests use in-memory fakes and api/vitest.config.mts env; no database needed.
+      - run: npm test
+      - run: npm run build

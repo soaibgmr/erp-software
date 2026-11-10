@@ -1,0 +1,9 @@
+// Client is generated into node_modules and imported from "@prisma/client".
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Connection URLs live in prisma.config.ts (CLI) and src/config/database.ts (runtime).
+datasource db {
+  provider = "postgresql"
+}

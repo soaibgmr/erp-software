@@ -1,0 +1,342 @@
+// ---------- Catalog masters ----------
+// Names are unique among non-deleted rows; enforced in the services (a DB unique index would also cover deleted rows).
+
+model ItemCategory {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @db.VarChar(80)
+  description String?   @db.VarChar(200)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  items Item[]
+
+  @@index([name])
+  @@map("item_categories")
+}
+
+model Brand {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String    @db.VarChar(80)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  items Item[]
+
+  @@index([name])
+  @@map("brands")
+}
+
+enum HsnSacKind {
+  HSN
+  SAC
+
+  @@map("hsn_sac_kind")
+}
+
+// HSN (goods) and SAC (services) codes with their default GST rate.
+model HsnSac {
+  id          String     @id @default(uuid()) @db.Uuid
+  code        String     @db.VarChar(8)
+  kind        HsnSacKind @default(HSN)
+  description String     @db.VarChar(300)
+  gstRate     Decimal    @map("gst_rate") @db.Decimal(5, 2)
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt   DateTime?  @map("deleted_at") @db.Timestamptz(3)
+
+  @@index([code])
+  @@map("hsn_sac_codes")
+}
+
+model VehicleMake {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String    @db.VarChar(60)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  models VehicleModel[]
+
+  @@index([name])
+  @@map("vehicle_makes")
+}
+
+model VehicleModel {
+  id        String    @id @default(uuid()) @db.Uuid
+  makeId    String    @map("make_id") @db.Uuid
+  name      String    @db.VarChar(80)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  make          VehicleMake         @relation(fields: [makeId], references: [id])
+  compatibility ItemCompatibility[]
+
+  @@index([makeId])
+  @@map("vehicle_models")
+}
+
+// ---------- Items ----------
+
+enum ItemUnit {
+  PCS
+  SET
+  PAIR
+  KIT
+  LTR
+  ML
+  KG
+  GM
+  MTR
+  ROLL
+  BOX
+
+  @@map("item_unit")
+}
+
+// Part master. SKU and barcodes are unique among non-deleted items (enforced in ItemService).
+// name/sku/oem_part_no carry trigram indexes for the POS search.
+model Item {
+  id            String    @id @default(uuid()) @db.Uuid
+  sku           String    @db.VarChar(40)
+  name          String    @db.VarChar(200)
+  oemPartNo     String?   @map("oem_part_no") @db.VarChar(60)
+  description   String?   @db.VarChar(500)
+  categoryId    String?   @map("category_id") @db.Uuid
+  brandId       String?   @map("brand_id") @db.Uuid
+  hsnCode       String?   @map("hsn_code") @db.VarChar(8)
+  gstRate       Decimal   @map("gst_rate") @db.Decimal(5, 2)
+  unit          ItemUnit  @default(PCS)
+  mrp           Decimal?  @db.Decimal(12, 2)
+  salePrice     Decimal   @map("sale_price") @db.Decimal(12, 2)
+  purchasePrice Decimal   @default(0) @map("purchase_price") @db.Decimal(12, 2)
+  taxInclusive  Boolean   @default(false) @map("tax_inclusive")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdById   String?   @map("created_by_id") @db.Uuid
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  category      ItemCategory?       @relation(fields: [categoryId], references: [id])
+  brand         Brand?              @relation(fields: [brandId], references: [id])
+  barcodes      ItemBarcode[]
+  compatibility ItemCompatibility[]
+  stock         BranchStock[]
+  ledger        StockLedger[]
+
+  @@index([sku])
+  @@index([oemPartNo])
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "items_name_trgm_idx")
+  @@index([sku(ops: raw("gin_trgm_ops"))], type: Gin, map: "items_sku_trgm_idx")
+  @@index([oemPartNo(ops: raw("gin_trgm_ops"))], type: Gin, map: "items_oem_part_no_trgm_idx")
+  @@map("items")
+}
+
+model ItemBarcode {
+  id        String   @id @default(uuid()) @db.Uuid
+  itemId    String   @map("item_id") @db.Uuid
+  code      String   @db.VarChar(64)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, code])
+  @@index([code])
+  @@map("item_barcodes")
+}
+
+model ItemCompatibility {
+  itemId         String @map("item_id") @db.Uuid
+  vehicleModelId String @map("vehicle_model_id") @db.Uuid
+
+  item         Item         @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  vehicleModel VehicleModel @relation(fields: [vehicleModelId], references: [id])
+
+  @@id([itemId, vehicleModelId])
+  @@index([vehicleModelId])
+  @@map("item_compatibility")
+}
+
+model LabourService {
+  id            String    @id @default(uuid()) @db.Uuid
+  code          String?   @db.VarChar(20)
+  name          String    @db.VarChar(150)
+  sacCode       String    @map("sac_code") @db.VarChar(8)
+  gstRate       Decimal   @map("gst_rate") @db.Decimal(5, 2)
+  rate          Decimal   @db.Decimal(12, 2)
+  standardHours Decimal   @default(0) @map("standard_hours") @db.Decimal(6, 2)
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  @@index([name])
+  @@map("labour_services")
+}
+
+// ---------- Stock ----------
+
+enum StockMovementType {
+  OPENING
+  ADJUSTMENT
+  TRANSFER_OUT
+  TRANSFER_IN
+  TRANSFER_CANCEL
+  SALE
+  SALE_CANCEL
+  SALE_RETURN
+  PURCHASE
+  PURCHASE_RETURN
+
+  @@map("stock_movement_type")
+}
+
+// Cached balances per branch and item. on_hand always equals the sum of stock_ledger.quantity;
+// it is only changed by StockService in the same transaction as the ledger insert.
+model BranchStock {
+  branchId    String   @map("branch_id") @db.Uuid
+  itemId      String   @map("item_id") @db.Uuid
+  onHand      Decimal  @default(0) @map("on_hand") @db.Decimal(12, 3)
+  reserved    Decimal  @default(0) @db.Decimal(12, 3)
+  // Dispatched to this branch by a transfer that hasn't been received yet.
+  inTransit   Decimal  @default(0) @map("in_transit") @db.Decimal(12, 3)
+  minLevel    Decimal  @default(0) @map("min_level") @db.Decimal(12, 3)
+  reorderQty  Decimal  @default(0) @map("reorder_qty") @db.Decimal(12, 3)
+  binLocation String?  @map("bin_location") @db.VarChar(30)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  branch Branch @relation(fields: [branchId], references: [id])
+  item   Item   @relation(fields: [itemId], references: [id])
+
+  @@id([branchId, itemId])
+  @@index([itemId])
+  @@map("branch_stock")
+}
+
+// Append-only. Corrections are new rows; rows are never updated or deleted.
+model StockLedger {
+  id           String            @id @default(uuid()) @db.Uuid
+  branchId     String            @map("branch_id") @db.Uuid
+  itemId       String            @map("item_id") @db.Uuid
+  type         StockMovementType
+  quantity     Decimal           @db.Decimal(12, 3)
+  balanceAfter Decimal           @map("balance_after") @db.Decimal(12, 3)
+  unitCost     Decimal?          @map("unit_cost") @db.Decimal(12, 2)
+  refType      String?           @map("ref_type") @db.VarChar(30)
+  refId        String?           @map("ref_id") @db.Uuid
+  refNo        String?           @map("ref_no") @db.VarChar(30)
+  note         String?           @db.VarChar(300)
+  createdById  String?           @map("created_by_id") @db.Uuid
+  createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  branch Branch @relation(fields: [branchId], references: [id])
+  item   Item   @relation(fields: [itemId], references: [id])
+
+  @@index([branchId, itemId, createdAt])
+  @@index([itemId])
+  @@index([refType, refId])
+  @@map("stock_ledger")
+}
+
+enum StockAdjustmentReason {
+  COUNT_CORRECTION
+  DAMAGE
+  EXPIRY
+  OPENING_STOCK
+  OTHER
+
+  @@map("stock_adjustment_reason")
+}
+
+enum StockAdjustmentStatus {
+  PENDING
+  POSTED
+  REJECTED
+
+  @@map("stock_adjustment_status")
+}
+
+model StockAdjustment {
+  id           String                @id @default(uuid()) @db.Uuid
+  number       String                @db.VarChar(30)
+  branchId     String                @map("branch_id") @db.Uuid
+  reason       StockAdjustmentReason
+  note         String?               @db.VarChar(300)
+  status       StockAdjustmentStatus
+  // Sum of |quantity| × unit cost, used for the approval limit.
+  totalValue   Decimal               @map("total_value") @db.Decimal(12, 2)
+  createdById  String?               @map("created_by_id") @db.Uuid
+  decidedById  String?               @map("decided_by_id") @db.Uuid
+  decidedAt    DateTime?             @map("decided_at") @db.Timestamptz(3)
+  decisionNote String?               @map("decision_note") @db.VarChar(300)
+  createdAt    DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime              @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  branch Branch                @relation(fields: [branchId], references: [id])
+  lines  StockAdjustmentLine[]
+
+  @@index([branchId, status])
+  @@index([createdAt])
+  @@map("stock_adjustments")
+}
+
+model StockAdjustmentLine {
+  id           String  @id @default(uuid()) @db.Uuid
+  adjustmentId String  @map("adjustment_id") @db.Uuid
+  itemId       String  @map("item_id") @db.Uuid
+  quantity     Decimal @db.Decimal(12, 3)
+  unitCost     Decimal @map("unit_cost") @db.Decimal(12, 2)
+
+  adjustment StockAdjustment @relation(fields: [adjustmentId], references: [id], onDelete: Cascade)
+
+  @@index([adjustmentId])
+  @@map("stock_adjustment_lines")
+}
+
+enum StockTransferStatus {
+  IN_TRANSIT
+  RECEIVED
+  CANCELLED
+
+  @@map("stock_transfer_status")
+}
+
+model StockTransfer {
+  id           String              @id @default(uuid()) @db.Uuid
+  number       String              @db.VarChar(30)
+  fromBranchId String              @map("from_branch_id") @db.Uuid
+  toBranchId   String              @map("to_branch_id") @db.Uuid
+  status       StockTransferStatus @default(IN_TRANSIT)
+  note         String?             @db.VarChar(300)
+  createdById  String?             @map("created_by_id") @db.Uuid
+  closedById   String?             @map("closed_by_id") @db.Uuid
+  closedAt     DateTime?           @map("closed_at") @db.Timestamptz(3)
+  createdAt    DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  fromBranch Branch              @relation("TransferFrom", fields: [fromBranchId], references: [id])
+  toBranch   Branch              @relation("TransferTo", fields: [toBranchId], references: [id])
+  lines      StockTransferLine[]
+
+  @@index([fromBranchId, status])
+  @@index([toBranchId, status])
+  @@index([createdAt])
+  @@map("stock_transfers")
+}
+
+model StockTransferLine {
+  id         String  @id @default(uuid()) @db.Uuid
+  transferId String  @map("transfer_id") @db.Uuid
+  itemId     String  @map("item_id") @db.Uuid
+  quantity   Decimal @db.Decimal(12, 3)
+  unitCost   Decimal @map("unit_cost") @db.Decimal(12, 2)
+
+  transfer StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+
+  @@index([transferId])
+  @@map("stock_transfer_lines")
+}

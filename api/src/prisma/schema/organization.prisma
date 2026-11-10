@@ -1,0 +1,111 @@
+// The business that owns every branch. Single row, created by the seed.
+model Business {
+  id            String   @id @default(uuid()) @db.Uuid
+  legalName     String   @map("legal_name") @db.VarChar(200)
+  tradeName     String?  @map("trade_name") @db.VarChar(200)
+  address       String?  @db.VarChar(300)
+  city          String?  @db.VarChar(100)
+  pincode       String?  @db.VarChar(6)
+  stateCode     String   @map("state_code") @db.VarChar(2)
+  gstin         String?  @db.VarChar(15)
+  phone         String?  @db.VarChar(20)
+  email         String?  @db.VarChar(255)
+  website       String?  @db.VarChar(200)
+  bankName      String?  @map("bank_name") @db.VarChar(100)
+  bankAccountNo String?  @map("bank_account_no") @db.VarChar(30)
+  bankIfsc      String?  @map("bank_ifsc") @db.VarChar(11)
+  upiId         String?  @map("upi_id") @db.VarChar(100)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("businesses")
+}
+
+model Branch {
+  id        String    @id @default(uuid()) @db.Uuid
+  code      String    @unique @db.VarChar(10)
+  name      String    @db.VarChar(100)
+  address   String?   @db.VarChar(300)
+  city      String?   @db.VarChar(100)
+  pincode   String?   @db.VarChar(6)
+  stateCode String    @map("state_code") @db.VarChar(2)
+  // Set when the branch is registered separately (e.g. in another state); otherwise the business GSTIN applies.
+  gstin     String?   @db.VarChar(15)
+  phone     String?   @db.VarChar(20)
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  users            UserBranch[]
+  sequences        DocumentSequence[]
+  stock            BranchStock[]
+  stockLedger      StockLedger[]
+  stockAdjustments StockAdjustment[]
+  transfersOut     StockTransfer[]    @relation("TransferFrom")
+  transfersIn      StockTransfer[]    @relation("TransferTo")
+  shifts           Shift[]
+  invoices         Invoice[]
+
+  @@map("branches")
+}
+
+// Settings groups (tax, print, pos); each value is validated by its zod schema in packages/shared.
+model Setting {
+  group       String   @id @db.VarChar(30)
+  value       Json
+  updatedById String?  @map("updated_by_id") @db.Uuid
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("settings")
+}
+
+enum DocumentType {
+  INVOICE
+  CREDIT_NOTE
+  STOCK_ADJUSTMENT
+  STOCK_TRANSFER
+  OPENING_BALANCE
+
+  @@map("document_type")
+}
+
+// Gap-free number series per branch, document type and financial year (April–March).
+// The row is locked with SELECT … FOR UPDATE when a number is taken.
+model DocumentSequence {
+  id            String       @id @default(uuid()) @db.Uuid
+  branchId      String       @map("branch_id") @db.Uuid
+  docType       DocumentType @map("doc_type")
+  financialYear Int          @map("financial_year") // starting calendar year, e.g. 2026 for 2026-27
+  prefix        String       @db.VarChar(6)
+  padding       Int          @default(5)
+  nextNumber    Int          @default(1) @map("next_number")
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  branch Branch @relation(fields: [branchId], references: [id])
+
+  @@unique([branchId, docType, financialYear])
+  @@map("document_sequences")
+}
+
+// Append-only record of sensitive changes.
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  actorId   String?  @map("actor_id") @db.Uuid
+  branchId  String?  @map("branch_id") @db.Uuid
+  action    String   @db.VarChar(60)
+  entity    String   @db.VarChar(60)
+  entityId  String?  @map("entity_id") @db.VarChar(64)
+  before    Json?
+  after     Json?
+  ip        String?  @db.VarChar(64)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([entity, entityId])
+  @@index([actorId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

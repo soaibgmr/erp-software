@@ -1,0 +1,94 @@
+@import "@fontsource-variable/inter";
+@import "tailwindcss";
+
+/*
+ * Design System v2 tokens (docs/DESIGN_SYSTEM.md).
+ * Navy carries structure, yellow marks where you are and the one money action.
+ * Components use these utilities only; no raw hex values outside this file.
+ */
+@theme {
+  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Brand */
+  --color-navy-900: #0b1f3a;
+  --color-navy-800: #12294a;
+  --color-navy-700: #1a3a6b;
+  --color-navy-600: #2a5191;
+  --color-navy-100: #e3e9f4;
+  --color-navy-50: #f3f6fb;
+  --color-yellow-700: #8a5a00;
+  --color-yellow-500: #f5b800;
+  --color-yellow-400: #ffc929;
+  --color-yellow-100: #fff1c2;
+  --color-yellow-50: #fffaeb;
+
+  /* Neutrals */
+  --color-ink: #0f1b2d;
+  --color-slate: #4a5a70;
+  --color-muted: #8a96a8;
+  --color-border: #dde3ec;
+  --color-canvas: #f4f6fa;
+  --color-surface: #ffffff;
+  --color-skeleton: #edf0f5;
+
+  /* Status */
+  --color-success: #15803d;
+  --color-success-50: #e8f6ee;
+  --color-warning: #b45309;
+  --color-warning-50: #fdf1e3;
+  --color-danger: #b91c1c;
+  --color-danger-50: #fdecec;
+  --color-danger-100: #f7caca;
+  --color-info: #1d4ed8;
+  --color-info-50: #e8eefc;
+
+  /* Type scale */
+  --text-page: 1.5rem;
+  --text-page--line-height: 2rem;
+  --text-section: 1.125rem;
+  --text-section--line-height: 1.625rem;
+  --text-card: 1rem;
+  --text-card--line-height: 1.5rem;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.25rem;
+  --text-helper: 0.8125rem;
+  --text-helper--line-height: 1.25rem;
+  --text-overline: 0.75rem;
+  --text-overline--line-height: 1rem;
+  --text-kpi: 1.75rem;
+  --text-kpi--line-height: 2.125rem;
+
+  /* Radius: 6 input · 10 card · 14 modal */
+  --radius-input: 6px;
+  --radius-menu: 8px;
+  --radius-card: 10px;
+  --radius-modal: 14px;
+
+  --shadow-menu: 0 8px 24px rgb(11 31 58 / 0.12), 0 1px 3px rgb(11 31 58 / 0.08);
+  --shadow-modal: 0 24px 48px rgb(11 31 58 / 0.18);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    @apply bg-canvas font-sans text-body text-ink;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-navy-600);
+    outline-offset: 2px;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@utility eyebrow {
+  font-size: var(--text-overline);
+  line-height: var(--text-overline--line-height);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

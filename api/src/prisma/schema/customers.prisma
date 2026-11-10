@@ -1,0 +1,39 @@
+enum CustomerType {
+  RETAIL
+  FLEET
+  B2B
+
+  @@map("customer_type")
+}
+
+// Customers are shared across branches.
+// Mobile uniqueness is enforced among non-deleted rows in CustomerService.
+model Customer {
+  id             String       @id @default(uuid()) @db.Uuid
+  type           CustomerType @default(RETAIL)
+  name           String       @db.VarChar(150)
+  mobile         String       @db.VarChar(10)
+  alternatePhone String?      @map("alternate_phone") @db.VarChar(10)
+  email          String?      @db.VarChar(255)
+  address        String?      @db.VarChar(300)
+  city           String?      @db.VarChar(100)
+  pincode        String?      @db.VarChar(6)
+  // Place of supply for GST; null means the branch's own state.
+  stateCode      String?      @map("state_code") @db.VarChar(2)
+  gstin          String?      @db.VarChar(15)
+  creditLimit    Decimal      @default(0) @map("credit_limit") @db.Decimal(12, 2)
+  creditDays     Int          @default(0) @map("credit_days")
+  notes          String?      @db.VarChar(500)
+  createdById    String?      @map("created_by_id") @db.Uuid
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt      DateTime?    @map("deleted_at") @db.Timestamptz(3)
+
+  invoices Invoice[]
+
+  @@index([mobile])
+  @@index([gstin])
+  @@index([name])
+  @@index([type])
+  @@map("customers")
+}

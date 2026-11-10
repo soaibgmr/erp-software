@@ -1,0 +1,35 @@
+{
+  "name": "automobile-erp",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Automobile.In ERP — workshop, POS billing and inventory",
+  "workspaces": [
+    "packages/shared",
+    "api",
+    "ui"
+  ],
+  "scripts": {
+    "build:shared": "npm run build -w @automobile/shared",
+    "dev:api": "npm run dev -w @automobile/api",
+    "dev:ui": "npm run dev -w @automobile/ui",
+    "build": "npm run build -w @automobile/shared && npm run build -w @automobile/api && npm run build -w @automobile/ui",
+    "typecheck": "npm run build:shared && npm run typecheck --workspaces",
+    "lint": "oxlint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "npm run build:shared && npm run test --workspaces"
+  },
+  "devDependencies": {
+    "oxlint": "^1.92.0",
+    "prettier": "^3.9.10",
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=22.12"
+  },
+  "allowScripts": {
+    "prisma@7.10.1": true,
+    "@prisma/engines@7.10.1": true,
+    "esbuild@0.28.2": true
+  }
+}
