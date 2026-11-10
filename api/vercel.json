@@ -6,7 +6,7 @@
   "buildCommand": "cd .. && npm run build:shared && npm run build -w @erp-software/api && npm run bundle -w @erp-software/api",
   "outputDirectory": "public",
   "regions": [
-    "bom1"
+    "syd1"
   ],
   "functions": {
     "api/index.js": {
