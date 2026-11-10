@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { ChevronLeft, Clock, Keyboard, PauseCircle, Power, Printer } from "lucide-react";
-import { priceCart, supplyTypeFor, type PrintFormat } from "@automobile/shared";
+import { priceCart, supplyTypeFor, type PrintFormat } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Logo } from "@/app/AppShell";
 import { useHotkey } from "@/app/hotkeys";

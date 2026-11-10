@@ -1,6 +1,6 @@
 import { inject, injectable } from "inversify";
 import { Prisma, PrismaClient } from "@prisma/client";
-import { toMilli, toPaise, type InvoiceStatus, type PaymentMethod } from "@automobile/shared";
+import { toMilli, toPaise, type InvoiceStatus, type PaymentMethod } from "@erp-software/shared";
 import { TYPES } from "../../config/ioc.types";
 import type { Paginated } from "../../common/pagination";
 import type { Db } from "../../common/prisma-types";

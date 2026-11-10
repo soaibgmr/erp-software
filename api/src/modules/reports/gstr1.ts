@@ -1,4 +1,4 @@
-import { B2CL_THRESHOLD_PAISE, toPaise, UQC_BY_UNIT } from "@automobile/shared";
+import { B2CL_THRESHOLD_PAISE, toPaise, UQC_BY_UNIT } from "@erp-software/shared";
 import type { GstCreditNoteRateRow, GstInvoiceRateRow, HsnRow } from "./report.types";
 
 // GSTR-1 in the shape of the GST offline tool / portal JSON (b2b, b2cl, b2cs, cdnr, cdnur, hsn).

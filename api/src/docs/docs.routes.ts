@@ -13,7 +13,7 @@ docsRouter.use(
   "/",
   swaggerUi.serve,
   swaggerUi.setup(openApiDocument, {
-    customSiteTitle: "Automobile.In ERP API",
+    customSiteTitle: "ERP Software API",
     swaggerOptions: { persistAuthorization: true },
   }),
 );

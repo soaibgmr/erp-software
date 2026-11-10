@@ -1,6 +1,6 @@
 import { useEffect, useState, type Ref } from "react";
 import { AlertTriangle, Minus, Percent, Plus, ShoppingCart, Tag, Trash2, UserPlus, UserRound, X } from "lucide-react";
-import { formatINR, formatMobile, formatQty, type PricedCart, type SupplyType } from "@automobile/shared";
+import { formatINR, formatMobile, formatQty, type PricedCart, type SupplyType } from "@erp-software/shared";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { SegmentedControl } from "@/components/ui/Controls";

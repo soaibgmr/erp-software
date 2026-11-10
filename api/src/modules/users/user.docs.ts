@@ -1,5 +1,5 @@
 import { UserStatus } from "@prisma/client";
-import { PERMISSIONS } from "@automobile/shared";
+import { PERMISSIONS } from "@erp-software/shared";
 import {
   fromZod,
   operation,

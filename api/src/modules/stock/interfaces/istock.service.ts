@@ -20,7 +20,7 @@ import type {
   StockTransferDto,
   UpdateStockSettingsDto,
 } from "../stock.types";
-import type { StockImportInput } from "@automobile/shared";
+import type { StockImportInput } from "@erp-software/shared";
 
 export interface IStockService {
   // The only way on-hand quantity changes. Call inside the caller's transaction: locks the

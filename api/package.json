@@ -1,8 +1,8 @@
 {
-  "name": "@automobile/api",
+  "name": "@erp-software/api",
   "version": "0.1.0",
   "private": true,
-  "description": "Automobile.In ERP REST API",
+  "description": "ERP Software REST API",
   "main": "dist/server.js",
   "type": "commonjs",
   "scripts": {
@@ -21,7 +21,7 @@
     "db:deploy:live": "node scripts/live.mjs prisma migrate deploy"
   },
   "dependencies": {
-    "@automobile/shared": "0.1.0",
+    "@erp-software/shared": "0.1.0",
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
     "bcryptjs": "^3.0.3",

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { INVOICE_KINDS, INVOICE_STATUSES, PAYMENT_METHODS } from "@automobile/shared";
+import { INVOICE_KINDS, INVOICE_STATUSES, PAYMENT_METHODS } from "@erp-software/shared";
 import { paginationQuery, searchQuery } from "../../common/schemas";
 
 export {
@@ -9,7 +9,7 @@ export {
   openingBalanceCreateSchema as createOpeningBalanceSchema,
   paymentCreateSchema as createPaymentSchema,
   paymentReverseSchema as reversePaymentSchema,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
 

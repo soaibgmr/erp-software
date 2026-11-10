@@ -2,10 +2,11 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { env, isProduction } from "./env";
 import { logger } from "./logger";
+import { resolveSslRootCert } from "./database-url";
 
 function createPrismaClient() {
   const adapter = new PrismaPg({
-    connectionString: env.DATABASE_URL,
+    connectionString: resolveSslRootCert(env.DATABASE_URL),
     max: env.DB_POOL_MAX,
     idleTimeoutMillis: env.DB_IDLE_TIMEOUT_MS,
     connectionTimeoutMillis: env.DB_CONNECTION_TIMEOUT_MS,

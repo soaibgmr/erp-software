@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { CheckCircle2, Download, FileSpreadsheet, Upload } from "lucide-react";
-import { csvToObjects, formatQty, ITEM_IMPORT_COLUMNS, MAX_IMPORT_ROWS, toCsv } from "@automobile/shared";
+import { csvToObjects, formatQty, ITEM_IMPORT_COLUMNS, MAX_IMPORT_ROWS, toCsv } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Badge, type Tone } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";

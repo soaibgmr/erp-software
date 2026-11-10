@@ -1,6 +1,6 @@
 import { inject, injectable } from "inversify";
 import { Prisma, PrismaClient } from "@prisma/client";
-import { toPaise } from "@automobile/shared";
+import { toPaise } from "@erp-software/shared";
 import { TYPES } from "../../config/ioc.types";
 import type { Paginated } from "../../common/pagination";
 import { loadUserNames } from "../../common/user-names";

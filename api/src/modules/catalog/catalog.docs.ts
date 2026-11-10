@@ -1,4 +1,4 @@
-import { HSN_SAC_KINDS } from "@automobile/shared";
+import { HSN_SAC_KINDS } from "@erp-software/shared";
 import {
   fromZod,
   operation,

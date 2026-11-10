@@ -1,6 +1,6 @@
 import { Link, useParams } from "react-router";
 import { Printer } from "lucide-react";
-import { formatINR, PAYMENT_METHOD_LABELS } from "@automobile/shared";
+import { formatINR, PAYMENT_METHOD_LABELS } from "@erp-software/shared";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, KpiCard } from "@/components/ui/Card";

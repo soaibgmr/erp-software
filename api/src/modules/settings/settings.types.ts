@@ -1,4 +1,4 @@
-import type { PosSettings, PrintSettings, SettingsGroup, TaxSettings } from "@automobile/shared";
+import type { PosSettings, PrintSettings, SettingsGroup, TaxSettings } from "@erp-software/shared";
 
 export type { SettingsGroup };
 

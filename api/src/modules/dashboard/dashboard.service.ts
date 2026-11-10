@@ -1,5 +1,5 @@
 import { inject, injectable } from "inversify";
-import { DASHBOARD_RANGE_DAYS, toPaise } from "@automobile/shared";
+import { DASHBOARD_RANGE_DAYS, toPaise } from "@erp-software/shared";
 import { TYPES } from "../../config/ioc.types";
 import { env } from "../../config/env";
 import type { AuthContext } from "../../common/auth-context";

@@ -2,7 +2,7 @@ import { inject, injectable } from "inversify";
 import { createHash, randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 import jwt, { type SignOptions } from "jsonwebtoken";
-import { PERMISSIONS } from "@automobile/shared";
+import { PERMISSIONS } from "@erp-software/shared";
 import { TYPES } from "../../config/ioc.types";
 import { env } from "../../config/env";
 import { BCRYPT_ROUNDS } from "../../common/constants";

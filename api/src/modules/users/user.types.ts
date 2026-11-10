@@ -1,5 +1,5 @@
 import type { UserStatus } from "@prisma/client";
-import type { Permission, UserCreate, UserUpdate } from "@automobile/shared";
+import type { Permission, UserCreate, UserUpdate } from "@erp-software/shared";
 
 export type { UserStatus };
 

@@ -7,7 +7,7 @@ import type {
   SettingsGroup,
   TaxSettings,
   UserStatus,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 import { meKey } from "@/app/auth";
 import { api } from "@/lib/api-client";
 import type { AuditLog, Branch, Business, DocumentSequence, PermissionGroup, Role, User } from "@/lib/types";

@@ -1,4 +1,4 @@
-import { PRINT_FORMAT_INFO, type PrintFormat, type PrintParam } from "@automobile/shared";
+import { PRINT_FORMAT_INFO, type PrintFormat, type PrintParam } from "@erp-software/shared";
 
 // Bill printing. The paper size comes from Settings → Billing & tax → Invoice printing (print.defaultFormat),
 // so every screen prints the same way; passing a format overrides it for one print.

@@ -1,5 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { StockAdjustmentStatus, StockStatus, StockTransferStatus } from "@automobile/shared";
+import type { StockAdjustmentStatus, StockStatus, StockTransferStatus } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { api } from "@/lib/api-client";
 import type {

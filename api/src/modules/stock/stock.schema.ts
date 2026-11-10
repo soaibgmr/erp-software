@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { STOCK_ADJUSTMENT_STATUSES, STOCK_TRANSFER_STATUSES } from "@automobile/shared";
+import { STOCK_ADJUSTMENT_STATUSES, STOCK_TRANSFER_STATUSES } from "@erp-software/shared";
 import { paginationQuery, searchQuery } from "../../common/schemas";
 
 export {
@@ -8,7 +8,7 @@ export {
   stockImportSchema as importSchema,
   stockSettingsSchema as updateStockSettingsSchema,
   stockTransferCreateSchema as createTransferSchema,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 
 export const listStockQuerySchema = z.object({
   ...paginationQuery,

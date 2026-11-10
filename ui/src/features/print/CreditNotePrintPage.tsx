@@ -1,5 +1,5 @@
 import { useParams } from "react-router";
-import { formatINR, formatMobile, formatQty, stateName } from "@automobile/shared";
+import { formatINR, formatMobile, formatQty, stateName } from "@erp-software/shared";
 import { useCreditNote, useInvoicePrint } from "@/features/invoices/api";
 import { useSettings } from "@/features/settings/api";
 import { cn, formatDate } from "@/lib/utils";

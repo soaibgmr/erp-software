@@ -1,4 +1,4 @@
-import type { PaymentMethod, ShiftClose, ShiftOpen } from "@automobile/shared";
+import type { PaymentMethod, ShiftClose, ShiftOpen } from "@erp-software/shared";
 
 export type OpenShiftDto = ShiftOpen;
 export type CloseShiftDto = ShiftClose;

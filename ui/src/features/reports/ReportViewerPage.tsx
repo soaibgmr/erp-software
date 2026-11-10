@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
 import { Download, FileJson, FileSpreadsheet, Inbox } from "lucide-react";
-import { reportDefinition, SALES_GROUP_BY_LABELS, SALES_GROUP_BYS, type SalesGroupBy } from "@automobile/shared";
+import { reportDefinition, SALES_GROUP_BY_LABELS, SALES_GROUP_BYS, type SalesGroupBy } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";

@@ -5,7 +5,7 @@ import {
   financialYearLabel,
   financialYearStart,
   formatDocumentNumber,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 import { TYPES } from "../../config/ioc.types";
 import { env } from "../../config/env";
 import { canAccessBranch, type AuthContext } from "../../common/auth-context";

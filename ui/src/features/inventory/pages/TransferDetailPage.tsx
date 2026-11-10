@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router";
 import { ArrowRight, Info, PackageCheck } from "lucide-react";
-import { formatINR, formatQty } from "@automobile/shared";
+import { formatINR, formatQty } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";

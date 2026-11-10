@@ -1,6 +1,6 @@
 import { inject, injectable } from "inversify";
 import { z } from "zod";
-import { defaultSettings, patchOf, SETTINGS_GROUPS, SETTINGS_SCHEMAS, type SettingsValue } from "@automobile/shared";
+import { defaultSettings, patchOf, SETTINGS_GROUPS, SETTINGS_SCHEMAS, type SettingsValue } from "@erp-software/shared";
 import { TYPES } from "../../config/ioc.types";
 import { logger } from "../../config/logger";
 import type { AuthContext } from "../../common/auth-context";

@@ -1,5 +1,5 @@
 import { inject, injectable } from "inversify";
-import { amountInWords, toPaise, type PaymentMethod } from "@automobile/shared";
+import { amountInWords, toPaise, type PaymentMethod } from "@erp-software/shared";
 import { TYPES } from "../../config/ioc.types";
 import { env } from "../../config/env";
 import { canAccessBranch, type AuthContext } from "../../common/auth-context";

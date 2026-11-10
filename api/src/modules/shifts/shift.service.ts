@@ -1,5 +1,5 @@
 import { inject, injectable } from "inversify";
-import { PAYMENT_METHODS, toPaise, type PaymentMethod } from "@automobile/shared";
+import { PAYMENT_METHODS, toPaise, type PaymentMethod } from "@erp-software/shared";
 import { TYPES } from "../../config/ioc.types";
 import { canAccessBranch, hasPermission, type AuthContext } from "../../common/auth-context";
 import { conflict, forbidden, notFound } from "../../common/http-error";

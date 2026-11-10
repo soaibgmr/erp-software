@@ -8,7 +8,7 @@ import type {
   StockStatus,
   StockTransferCreate,
   StockTransferStatus,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 import type { ItemStockDto } from "../items/item.types";
 
 // ---------- Ledger core ----------

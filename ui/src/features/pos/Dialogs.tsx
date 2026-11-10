@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { Plus, ShieldCheck, Trash2 } from "lucide-react";
-import { formatINR, PAYMENT_METHOD_LABELS, POS_PAYMENT_METHODS, type PaymentMethod } from "@automobile/shared";
+import { formatINR, PAYMENT_METHOD_LABELS, POS_PAYMENT_METHODS, type PaymentMethod } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";

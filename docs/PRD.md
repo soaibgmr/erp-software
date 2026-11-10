@@ -1,4 +1,4 @@
-# Automobile.In ERP — Product Requirements Document
+# ERP Software — Product Requirements Document
 
 | | |
 |---|---|
@@ -12,7 +12,7 @@
 
 ## 1. Summary
 
-Automobile.In is a web ERP for automobile workshops that also sell spare parts over the counter. One business runs several branches (for example *Kochi · Main branch*). Each branch has counter staff who bill parts at a POS, service advisors who open job cards when a vehicle arrives, technicians who work in bays, and a store that buys and holds stock.
+ERP Software is a web ERP for automobile workshops that also sell spare parts over the counter. One business runs several branches (for example *Kochi · Main branch*). Each branch has counter staff who bill parts at a POS, service advisors who open job cards when a vehicle arrives, technicians who work in bays, and a store that buys and holds stock.
 
 The system covers POS billing, workshop job cards, GST-compliant invoicing, inventory, purchases, receivables, dashboards and reports. It also connects to WhatsApp, a UPI/payment gateway, the GST e-invoice/e-way bill system, barcode scanners and thermal printers.
 

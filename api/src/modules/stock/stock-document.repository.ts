@@ -1,6 +1,6 @@
 import { inject, injectable } from "inversify";
 import { Prisma, PrismaClient } from "@prisma/client";
-import { milliToDecimal, toMilli } from "@automobile/shared";
+import { milliToDecimal, toMilli } from "@erp-software/shared";
 import { TYPES } from "../../config/ioc.types";
 import type { Paginated } from "../../common/pagination";
 import type { Db } from "../../common/prisma-types";

@@ -1,6 +1,6 @@
 import { useNavigate, useSearchParams } from "react-router";
 import { ArrowRight, Plus, Truck } from "lucide-react";
-import { formatQty, type StockTransferStatus } from "@automobile/shared";
+import { formatQty, type StockTransferStatus } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";

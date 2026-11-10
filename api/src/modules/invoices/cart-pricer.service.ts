@@ -1,5 +1,5 @@
 import { inject, injectable } from "inversify";
-import { milliToDecimal, priceCart, supplyTypeFor, toMilli, toPaise } from "@automobile/shared";
+import { milliToDecimal, priceCart, supplyTypeFor, toMilli, toPaise } from "@erp-software/shared";
 import { TYPES } from "../../config/ioc.types";
 import { hasPermission, type AuthContext } from "../../common/auth-context";
 import { fieldErrors, notFound } from "../../common/http-error";

@@ -1,4 +1,4 @@
-import { posSettingsSchema, printSettingsSchema, SETTINGS_GROUPS, taxSettingsSchema } from "@automobile/shared";
+import { posSettingsSchema, printSettingsSchema, SETTINGS_GROUPS, taxSettingsSchema } from "@erp-software/shared";
 import { fromZod, operation, type Paths, ref, type SchemaObject, success } from "../../docs/openapi.helpers";
 
 export const settingsSchemas: Record<string, SchemaObject> = {

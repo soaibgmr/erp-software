@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
-import { formatMobile, optionalMobileSchema, passwordSchema } from "@automobile/shared";
+import { formatMobile, optionalMobileSchema, passwordSchema } from "@erp-software/shared";
 import { meKey, useAuth } from "@/app/auth";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";

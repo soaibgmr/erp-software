@@ -5,8 +5,8 @@ import {
   type StockAdjustmentStatus,
   type StockStatus,
   type StockTransferStatus,
-} from "@automobile/shared";
-import type { Permission } from "@automobile/shared";
+} from "@erp-software/shared";
+import type { Permission } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Badge, type Tone } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";

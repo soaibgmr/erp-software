@@ -1,6 +1,6 @@
 import { inject, injectable } from "inversify";
 import type { Request, Response } from "express";
-import { REPORTS } from "@automobile/shared";
+import { REPORTS } from "@erp-software/shared";
 import { TYPES } from "../../config/ioc.types";
 import { sendSuccess } from "../../common/api-response";
 import { badRequest } from "../../common/http-error";

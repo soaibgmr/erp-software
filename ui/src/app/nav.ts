@@ -1,5 +1,5 @@
 import { BarChart3, FileText, LayoutGrid, Monitor, Package, Settings, Users, type LucideIcon } from "lucide-react";
-import type { Permission } from "@automobile/shared";
+import type { Permission } from "@erp-software/shared";
 
 export interface NavItem {
   label: string;

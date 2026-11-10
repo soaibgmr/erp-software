@@ -1,4 +1,4 @@
-# Automobile.In ERP
+# ERP Software
 
 Workshop, POS billing and inventory ERP for multi-branch automobile businesses.
 
@@ -16,8 +16,8 @@ npm install                      # all workspaces
 cp api/.env.example api/.env     # set DATABASE_URL, DIRECT_URL, JWT_SECRET, CLIENT_ID, SEED_ADMIN_*
 cp ui/.env.example ui/.env       # VITE_CLIENT_ID must equal CLIENT_ID
 npm run build:shared
-npm run db:migrate -w @automobile/api
-npm run db:seed -w @automobile/api   # system roles, business, main branch, owner login
+npm run db:migrate -w @erp-software/api
+npm run db:seed -w @erp-software/api   # system roles, business, main branch, owner login
 npm run dev:api                  # http://localhost:8000  (Swagger at /docs)
 npm run dev:ui                   # http://localhost:5173
 ```

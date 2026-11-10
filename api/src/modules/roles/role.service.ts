@@ -1,5 +1,5 @@
 import { inject, injectable } from "inversify";
-import type { Permission } from "@automobile/shared";
+import type { Permission } from "@erp-software/shared";
 import { TYPES } from "../../config/ioc.types";
 import type { AuthContext } from "../../common/auth-context";
 import { badRequest, conflict, forbidden, notFound } from "../../common/http-error";

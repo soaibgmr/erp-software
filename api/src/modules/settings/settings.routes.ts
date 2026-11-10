@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { SETTINGS_GROUPS } from "@automobile/shared";
+import { SETTINGS_GROUPS } from "@erp-software/shared";
 import { container } from "../../config/inversify.config";
 import { TYPES } from "../../config/ioc.types";
 import type { AuthMiddleware } from "../../middleware/auth";

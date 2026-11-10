@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate, useParams } from "react-router";
 import { History, Pencil, Printer, SlidersHorizontal } from "lucide-react";
 import type { z } from "zod";
-import { formatINR, formatQty, ITEM_UNIT_LABELS, STOCK_MOVEMENT_LABELS, stockSettingsSchema } from "@automobile/shared";
+import { formatINR, formatQty, ITEM_UNIT_LABELS, STOCK_MOVEMENT_LABELS, stockSettingsSchema } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";

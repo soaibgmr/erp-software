@@ -1,4 +1,4 @@
-import { PERMISSIONS, SYSTEM_ROLES, type Permission } from "@automobile/shared";
+import { PERMISSIONS, SYSTEM_ROLES, type Permission } from "@erp-software/shared";
 import type { AuthContext } from "../common/auth-context";
 import type { IAuditService } from "../modules/audit/interfaces/iaudit.service";
 import type { AuditEntry } from "../modules/audit/audit.types";

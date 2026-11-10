@@ -1,4 +1,4 @@
-import { PERMISSIONS } from "@automobile/shared";
+import { PERMISSIONS } from "@erp-software/shared";
 import { fromZod, operation, pathParam, type Paths, ref, type SchemaObject, success } from "../../docs/openapi.helpers";
 import { createRoleSchema, updateRoleSchema } from "./role.schema";
 

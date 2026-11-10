@@ -8,7 +8,7 @@ import {
   type ItemImportColumn,
   type ItemImportRow,
   type StockImportInput,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 import { TYPES } from "../../config/ioc.types";
 import type { AuthContext } from "../../common/auth-context";
 import { badRequest } from "../../common/http-error";

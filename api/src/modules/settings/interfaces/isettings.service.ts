@@ -1,4 +1,4 @@
-import type { SettingsValue } from "@automobile/shared";
+import type { SettingsValue } from "@erp-software/shared";
 import type { AuthContext } from "../../../common/auth-context";
 import type { AllSettingsDto, SettingsGroup } from "../settings.types";
 

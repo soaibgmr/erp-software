@@ -67,7 +67,7 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
         <div className="flex items-center gap-3 px-5 pt-5 pb-4">
           <Logo />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-card font-bold">Automobile.In</p>
+            <p className="truncate text-card font-bold">ERP Software</p>
             {multiBranch ? (
               <Menu
                 align="left"

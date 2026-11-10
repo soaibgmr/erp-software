@@ -13,7 +13,7 @@ import {
   printSettingsSchema,
   taxSettingsSchema,
   type SettingsGroup,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Checkbox, Field, FormGrid, Input, Select, Textarea } from "@/components/ui/Field";

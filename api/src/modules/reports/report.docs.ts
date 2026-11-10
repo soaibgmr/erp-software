@@ -1,4 +1,4 @@
-import { REPORT_NAMES, reportQuerySchema, tallyExportQuerySchema } from "@automobile/shared";
+import { REPORT_NAMES, reportQuerySchema, tallyExportQuerySchema } from "@erp-software/shared";
 import { operation, pathParam, type Paths, queryParams, ref, success } from "../../docs/openapi.helpers";
 
 const cell = { type: ["string", "number", "null"] };

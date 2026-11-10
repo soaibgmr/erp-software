@@ -8,7 +8,7 @@ import {
   PRINT_FORMATS,
   printFormatFromParam,
   stateName,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 import { SegmentedControl } from "@/components/ui/Controls";
 import { useInvoicePrint } from "@/features/invoices/api";
 import { useSettings } from "@/features/settings/api";

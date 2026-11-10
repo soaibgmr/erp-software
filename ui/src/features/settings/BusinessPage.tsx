@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
-import { businessUpdateSchema, checkGstin, INDIAN_STATES } from "@automobile/shared";
+import { businessUpdateSchema, checkGstin, INDIAN_STATES } from "@erp-software/shared";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Field, FormGrid, Input, Select } from "@/components/ui/Field";

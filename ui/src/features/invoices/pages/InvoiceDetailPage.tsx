@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { ChevronDown, Printer, Undo2 } from "lucide-react";
-import { formatINR, formatMobile, formatQty, PAYMENT_METHOD_LABELS, stateName } from "@automobile/shared";
+import { formatINR, formatMobile, formatQty, PAYMENT_METHOD_LABELS, stateName } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";

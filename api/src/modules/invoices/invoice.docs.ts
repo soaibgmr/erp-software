@@ -5,7 +5,7 @@ import {
   quoteSchema,
   shiftCloseSchema,
   shiftOpenSchema,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 import {
   fromZod,
   operation,

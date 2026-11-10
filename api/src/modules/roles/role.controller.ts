@@ -1,6 +1,6 @@
 import { inject, injectable } from "inversify";
 import type { Request, Response } from "express";
-import { PERMISSION_GROUPS } from "@automobile/shared";
+import { PERMISSION_GROUPS } from "@erp-software/shared";
 import { TYPES } from "../../config/ioc.types";
 import { sendCreated, sendSuccess } from "../../common/api-response";
 import type { IRoleService } from "./interfaces/irole.service";

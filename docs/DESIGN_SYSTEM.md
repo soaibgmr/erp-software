@@ -1,4 +1,4 @@
-# Automobile.In ERP — Design System v2
+# ERP Software — Design System v2
 
 > Navy carries structure, yellow marks where you are and the one action that matters on a screen. Everything else is neutral, dense and quiet so the data reads first.
 
@@ -108,7 +108,7 @@ Pill, 12–13 px text, leading dot.
 ## 8. Layout components
 
 ### Sidebar (248 px, navy-900)
-- Header: yellow logo tile + *Automobile.In* + branch (*Kochi · Main branch*).
+- Header: yellow logo tile + *ERP Software* + branch (*Kochi · Main branch*).
 - Groups with overline labels: **Sales** (Dashboard, POS billing `F2`, Invoices, Customers) · **Stock** (Inventory, Purchases, Suppliers) · **Admin** (Reports, Settings).
 - Active item: subtle lighter navy background, yellow-400 icon and text. Count badge: navy pill.
 - Footer user card: avatar initials, name, role · shift.

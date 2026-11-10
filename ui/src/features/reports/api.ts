@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import type { DashboardRange, PaymentMethod, ReportResult, SalesGroupBy } from "@automobile/shared";
+import type { DashboardRange, PaymentMethod, ReportResult, SalesGroupBy } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { api } from "@/lib/api-client";
 import type { InvoiceSummary } from "@/lib/types";

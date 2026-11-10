@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { documentSequenceUpdateSchema, documentTypeSchema } from "@automobile/shared";
+import { documentSequenceUpdateSchema, documentTypeSchema } from "@erp-software/shared";
 
 export const listSequencesQuerySchema = z.object({ branchId: z.uuid() });
 

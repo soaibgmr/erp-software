@@ -1,5 +1,5 @@
 import { Navigate, NavLink, Outlet, useLocation } from "react-router";
-import type { Permission } from "@automobile/shared";
+import type { Permission } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { PageHeader } from "@/components/ui/Controls";
 import { cn } from "@/lib/utils";

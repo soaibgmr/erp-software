@@ -4,7 +4,7 @@ import {
   STOCK_ADJUSTMENT_STATUSES,
   STOCK_MOVEMENT_TYPES,
   STOCK_TRANSFER_STATUSES,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 import {
   fromZod,
   operation,

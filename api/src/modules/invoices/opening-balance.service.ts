@@ -1,5 +1,5 @@
 import { inject, injectable } from "inversify";
-import { formatINR, toPaise } from "@automobile/shared";
+import { formatINR, toPaise } from "@erp-software/shared";
 import { TYPES } from "../../config/ioc.types";
 import { env } from "../../config/env";
 import { canAccessBranch, type AuthContext } from "../../common/auth-context";

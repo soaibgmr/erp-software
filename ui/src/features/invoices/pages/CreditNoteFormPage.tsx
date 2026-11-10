@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import { formatINR, formatQty, PAYMENT_METHOD_LABELS, PAYMENT_METHODS, type PaymentMethod } from "@automobile/shared";
+import { formatINR, formatQty, PAYMENT_METHOD_LABELS, PAYMENT_METHODS, type PaymentMethod } from "@erp-software/shared";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/Controls";

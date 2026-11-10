@@ -1,5 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CustomerType } from "@automobile/shared";
+import type { CustomerType } from "@erp-software/shared";
 import { api } from "@/lib/api-client";
 import type { Customer } from "@/lib/types";
 

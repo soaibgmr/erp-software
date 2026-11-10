@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { Package, Plus, Search, Upload } from "lucide-react";
-import { formatINR, formatQty, type StockStatus } from "@automobile/shared";
+import { formatINR, formatQty, type StockStatus } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";

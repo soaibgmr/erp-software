@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DASHBOARD_RANGES } from "@automobile/shared";
+import { DASHBOARD_RANGES } from "@erp-software/shared";
 
 // branchId defaults to the x-branch-id header; "all" = every branch the user can access.
 const branchId = z.union([z.uuid(), z.literal("all")]).optional();

@@ -1,4 +1,4 @@
-import { divRound } from "@automobile/shared";
+import { divRound } from "@erp-software/shared";
 import type { CreditableLine, StoredInvoiceStatus } from "./invoice.types";
 
 // Status from the money (paise). Balance due = grand total − credit notes − net payments.

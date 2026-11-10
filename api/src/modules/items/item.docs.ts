@@ -1,4 +1,4 @@
-import { ITEM_UNITS } from "@automobile/shared";
+import { ITEM_UNITS } from "@erp-software/shared";
 import {
   fromZod,
   operation,

@@ -1,4 +1,4 @@
-# Automobile.In ERP — Architecture & Design Patterns
+# ERP Software — Architecture & Design Patterns
 
 | | |
 |---|---|
@@ -34,7 +34,7 @@ This document lists the patterns the codebase uses and *where* each one applies.
 Repository layout:
 
 ```
-automobile.in/
+erp-software/
 ├── package.json            # npm workspaces
 ├── docs/                   # PRD, plan, patterns, design system
 ├── packages/shared/src/    # schemas/, gst.ts, money.ts, amount-in-words.ts, reg-number.ts, enums.ts

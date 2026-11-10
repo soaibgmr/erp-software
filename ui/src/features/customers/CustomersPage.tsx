@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { Plus, Search, Users } from "lucide-react";
-import { CUSTOMER_TYPE_LABELS, CUSTOMER_TYPES, formatINR, formatMobile, type CustomerType } from "@automobile/shared";
+import { CUSTOMER_TYPE_LABELS, CUSTOMER_TYPES, formatINR, formatMobile, type CustomerType } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Badge, type Tone } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";

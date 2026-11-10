@@ -1,5 +1,5 @@
 import { Router } from "express";
-import type { Permission } from "@automobile/shared";
+import type { Permission } from "@erp-software/shared";
 import { container } from "../../config/inversify.config";
 import { TYPES } from "../../config/ioc.types";
 import { idParamSchema } from "../../common/schemas";

@@ -1,1 +1,1 @@
-export { roleCreateSchema as createRoleSchema, roleUpdateSchema as updateRoleSchema } from "@automobile/shared";
+export { roleCreateSchema as createRoleSchema, roleUpdateSchema as updateRoleSchema } from "@erp-software/shared";

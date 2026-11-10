@@ -9,7 +9,7 @@ import {
   checkGstin,
   customerCreateSchema,
   INDIAN_STATES,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/Controls";

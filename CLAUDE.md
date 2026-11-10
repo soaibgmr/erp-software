@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Automobile.In ERP: POS billing, customers' dues, inventory and GST reports for multi-branch automobile parts shops in India. Workshop/job cards and purchasing (suppliers, purchase orders, goods receipts, supplier bills, payables) were deliberately removed; don't add them back without asking. An npm-workspaces monorepo:
+ERP Software: POS billing, customers' dues, inventory and GST reports for multi-branch automobile parts shops in India. Workshop/job cards and purchasing (suppliers, purchase orders, goods receipts, supplier bills, payables) were deliberately removed; don't add them back without asking. An npm-workspaces monorepo:
 
 | Folder | What |
 |---|---|
 | `api/` | Express 5 + Prisma 7 + PostgreSQL REST API. **Read `api/CLAUDE.md` before touching the API**: it documents the module layout, DI rules, request pipeline, stock ledger and POS/invoice flows in detail. |
 | `ui/` | React 19 + Vite + Tailwind 4 SPA (TanStack Query, React Hook Form, react-router). |
-| `packages/shared/` | `@automobile/shared`: zod schemas, permission catalog, GST/pricing engine, money/quantity helpers, Indian formatting. Used by both api and ui. |
+| `packages/shared/` | `@erp-software/shared`: zod schemas, permission catalog, GST/pricing engine, money/quantity helpers, Indian formatting. Used by both api and ui. |
 | `docs/` | `PRD.md`, `DEVELOPMENT_PLAN.md`, `DESIGN_PATTERNS.md` (where each pattern applies), `DESIGN_SYSTEM.md` (tokens, components, print layout). Parts of DESIGN_PATTERNS describe planned work (job cards, outbox worker, Zustand); check the code before assuming something exists. |
 
 ## Commands
@@ -19,7 +19,7 @@ Run from the repo root (Node >= 22.12):
 
 ```bash
 npm install
-npm run build:shared      # REQUIRED first: api and ui import @automobile/shared from its dist/
+npm run build:shared      # REQUIRED first: api and ui import @erp-software/shared from its dist/
 npm run dev:api           # http://localhost:8000, Swagger at /docs
 npm run dev:ui            # http://localhost:5173
 npm run typecheck         # builds shared, then tsc in every workspace
@@ -32,16 +32,18 @@ npm run format            # prettier
 Single workspace / single test:
 
 ```bash
-npm test -w @automobile/api                                    # or @automobile/ui, @automobile/shared
+npm test -w @erp-software/api                                    # or @erp-software/ui, @erp-software/shared
 cd api && npx vitest run src/modules/phase3.service.test.ts    # one file
 cd api && npx vitest run -t "sells on credit"                  # tests matching a name
 ```
 
-**Env files (API):** `api/.env.local` = your machine (local PostgreSQL), `api/.env` = live (Supabase, `NODE_ENV=production`). `src/config/load-env.ts` loads `.env.local` first, so it wins locally; real environment variables beat both. To run a command against live from your machine, use `npm run live -w @automobile/api -- <command>` (e.g. `npm run db:deploy:live -w @automobile/api`), which sets `APP_ENV=live` and skips `.env.local`.
+**Env files (API):** `api/.env.local` = your machine (local PostgreSQL), `api/.env` = live (Supabase, `NODE_ENV=production`). `src/config/load-env.ts` loads `.env.local` first, so it wins locally; real environment variables beat both. To run a command against live from your machine, use `npm run live -w @erp-software/api -- <command>` (e.g. `npm run db:deploy:live -w @erp-software/api`), which sets `APP_ENV=live` and skips `.env.local`.
 
-**Supabase (live):** only used as a hosted PostgreSQL. Tables are changed **only** through Prisma migrations (`npm run db:deploy:live -w @automobile/api`), never the Supabase dashboard, Supabase CLI migrations or MCP `apply_migration`, so live always matches `api/src/prisma/migrations`. The app does its own auth (JWT) and permission checks in the API; it does not use Supabase Auth, RLS, Storage or Edge Functions. The installed `.claude/skills/supabase*` skills are general Supabase guidance; this rule wins where they differ.
+**Supabase (live):** only used as a hosted PostgreSQL. Tables are changed **only** through Prisma migrations (`npm run db:deploy:live -w @erp-software/api`), never the Supabase dashboard, Supabase CLI migrations or MCP `apply_migration`, so live always matches `api/src/prisma/migrations`. The app does its own auth (JWT) and permission checks in the API; it does not use Supabase Auth, RLS, Storage or Edge Functions. The installed `.claude/skills/supabase*` skills are general Supabase guidance; this rule wins where they differ.
 
-Database (API workspace): `npm run db:migrate -w @automobile/api`, `db:generate`, `db:seed`, `db:deploy`, `db:studio`. First run: copy `api/.env.example` → `api/.env` and `ui/.env.example` → `ui/.env`. `VITE_CLIENT_ID` must equal the API's `CLIENT_ID`, because every `/api/v1` request carries a `clientid` header.
+Database (API workspace): `npm run db:migrate -w @erp-software/api`, `db:generate`, `db:seed`, `db:deploy`, `db:studio`. First run: copy `api/.env.example` → `api/.env` and `ui/.env.example` → `ui/.env`. `VITE_CLIENT_ID` must equal the API's `CLIENT_ID`, because every `/api/v1` request carries a `clientid` header.
+
+**Deploy (Vercel, from GitHub `main`):** two Vercel projects on one repo, `erp-software-api` (Root Directory `api`) and `erp-software-ui` (Root Directory `ui`), both with "Include source files outside of the Root Directory" on. Settings live in `api/vercel.json` and `ui/vercel.json` (install and build run from the repo root, shared is built first). The API runs as one function, `api/api/index.js`, which loads the tsc-built `api/dist/app.js` (Vercel does not compile our TypeScript); `src/server.ts` is only for local/long-running hosts. Env vars are set in the Vercel dashboard, not files: API uses the Supabase transaction pooler (port 6543) with `DB_POOL_MAX=2` and `CORS_ORIGIN` = the UI URL; UI needs `VITE_API_URL` and `VITE_CLIENT_ID` (inlined at build time, so redeploy after changing them). Run `npm run db:deploy:live -w @erp-software/api` **before** pushing code that needs a new migration; Vercel never runs migrations.
 
 CI (`.github/workflows/ci.yml`) runs `npm ci`, `typecheck`, `lint`, `test`, `build`, in that order.
 

@@ -1,4 +1,4 @@
-import type { BranchCreate, BranchUpdate } from "@automobile/shared";
+import type { BranchCreate, BranchUpdate } from "@erp-software/shared";
 
 export type CreateBranchDto = BranchCreate;
 export type UpdateBranchDto = BranchUpdate;

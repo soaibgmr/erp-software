@@ -1,5 +1,5 @@
 import { inject, injectable } from "inversify";
-import { divRound, toMilli, toPaise } from "@automobile/shared";
+import { divRound, toMilli, toPaise } from "@erp-software/shared";
 import { TYPES } from "../../config/ioc.types";
 import { canAccessBranch, hasPermission, type AuthContext } from "../../common/auth-context";
 import { conflict, fieldErrors, forbidden, notFound } from "../../common/http-error";

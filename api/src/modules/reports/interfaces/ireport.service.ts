@@ -1,4 +1,4 @@
-import type { ReportQuery, ReportResult, TallyExportQuery } from "@automobile/shared";
+import type { ReportQuery, ReportResult, TallyExportQuery } from "@erp-software/shared";
 import type { AuthContext } from "../../../common/auth-context";
 import type { Gstr1Json } from "../gstr1";
 

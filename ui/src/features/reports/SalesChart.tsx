@@ -1,4 +1,4 @@
-import { formatINR } from "@automobile/shared";
+import { formatINR } from "@erp-software/shared";
 import { cn } from "@/lib/utils";
 
 interface Day {

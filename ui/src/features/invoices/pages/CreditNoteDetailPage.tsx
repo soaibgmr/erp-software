@@ -1,6 +1,6 @@
 import { Link, useParams } from "react-router";
 import { Printer } from "lucide-react";
-import { formatINR, formatQty } from "@automobile/shared";
+import { formatINR, formatQty } from "@erp-software/shared";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { DescriptionList, PageHeader } from "@/components/ui/Controls";

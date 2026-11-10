@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { paginationQuery, searchQuery } from "../../common/schemas";
 
-export { itemCreateSchema as createItemSchema, itemUpdateSchema as updateItemSchema } from "@automobile/shared";
+export { itemCreateSchema as createItemSchema, itemUpdateSchema as updateItemSchema } from "@erp-software/shared";
 
 export const listItemsQuerySchema = z.object({
   ...paginationQuery,

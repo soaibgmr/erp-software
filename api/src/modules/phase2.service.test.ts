@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { describe, expect, it } from "vitest";
-import { defaultSettings, fromMilli, toMilli, type SettingsGroup } from "@automobile/shared";
+import { defaultSettings, fromMilli, toMilli, type SettingsGroup } from "@erp-software/shared";
 import { HttpError } from "../common/http-error";
 import type { Db } from "../common/prisma-types";
 import type { IUnitOfWork } from "../common/unit-of-work";

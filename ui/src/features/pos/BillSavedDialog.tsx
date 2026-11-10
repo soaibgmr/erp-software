@@ -6,7 +6,7 @@ import {
   PRINT_FORMAT_INFO,
   PRINT_FORMATS,
   type PrintFormat,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 import { useHotkey } from "@/app/hotkeys";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";

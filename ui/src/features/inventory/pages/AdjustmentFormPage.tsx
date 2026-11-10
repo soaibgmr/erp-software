@@ -6,7 +6,7 @@ import {
   STOCK_ADJUSTMENT_REASON_LABELS,
   STOCK_ADJUSTMENT_REASONS,
   type StockAdjustmentReason,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";

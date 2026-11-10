@@ -4,7 +4,7 @@ import { paginationQuery, searchQuery } from "../../common/schemas";
 export {
   labourServiceCreateSchema as createLabourServiceSchema,
   labourServiceUpdateSchema as updateLabourServiceSchema,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 
 export const listLabourServicesQuerySchema = z.object({
   ...paginationQuery,

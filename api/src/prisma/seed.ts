@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { SYSTEM_ROLE_KEYS, SYSTEM_ROLES, STATE_CODES } from "@automobile/shared";
+import { SYSTEM_ROLE_KEYS, SYSTEM_ROLES, STATE_CODES } from "@erp-software/shared";
 import { prisma } from "../config/database";
 import { BCRYPT_ROUNDS } from "../common/constants";
 
@@ -30,7 +30,7 @@ async function main() {
   if (!(await prisma.business.findFirst())) {
     await prisma.business.create({
       data: {
-        legalName: process.env.SEED_BUSINESS_NAME ?? "Automobile.In",
+        legalName: process.env.SEED_BUSINESS_NAME ?? "ERP Software",
         stateCode,
         city: process.env.SEED_CITY ?? "Kochi",
       },

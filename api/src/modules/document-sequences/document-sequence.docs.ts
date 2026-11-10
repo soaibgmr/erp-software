@@ -1,4 +1,4 @@
-import { DOCUMENT_TYPES } from "@automobile/shared";
+import { DOCUMENT_TYPES } from "@erp-software/shared";
 import {
   fromZod,
   operation,

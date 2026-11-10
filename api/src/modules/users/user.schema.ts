@@ -6,7 +6,7 @@ import {
   passwordSchema,
   userCreateSchema,
   userUpdateSchema,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 import { paginationQuery, searchQuery } from "../../common/schemas";
 
 export { loginSchema, userCreateSchema as createUserSchema, userUpdateSchema as updateUserSchema };

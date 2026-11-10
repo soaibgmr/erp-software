@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router";
 import { Check, X } from "lucide-react";
-import { formatINR, STOCK_ADJUSTMENT_REASON_LABELS } from "@automobile/shared";
+import { formatINR, STOCK_ADJUSTMENT_REASON_LABELS } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";

@@ -47,7 +47,7 @@ import { RolesPage } from "@/features/settings/RolesPage";
 import { RequirePermission, SettingsLayout } from "@/features/settings/SettingsLayout";
 import { UsersPage } from "@/features/settings/UsersPage";
 import { errorMessage } from "@/lib/utils";
-import type { Permission } from "@automobile/shared";
+import type { Permission } from "@erp-software/shared";
 
 function RequireAuth() {
   const { status, error, logout } = useAuth();

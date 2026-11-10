@@ -256,6 +256,6 @@ export class ReportRepository implements IReportRepository {
 
   async businessName() {
     const b = await this.prisma.business.findFirst({ select: { legalName: true, gstin: true } });
-    return b ?? { legalName: "Automobile.In", gstin: null };
+    return b ?? { legalName: "ERP Software", gstin: null };
   }
 }

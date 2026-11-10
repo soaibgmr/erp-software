@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Lock, Plus, ShieldCheck } from "lucide-react";
-import type { Permission } from "@automobile/shared";
+import type { Permission } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";

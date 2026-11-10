@@ -1,4 +1,4 @@
-# Automobile.In ERP — Phase-wise Development Plan
+# ERP Software — Phase-wise Development Plan
 
 | | |
 |---|---|
@@ -123,7 +123,7 @@ Estimates assume 2 full-stack developers and 1 part-time designer/QA. Phases are
 **Goal:** a clean monorepo, quality gates, and a UI shell that matches the designs.
 
 ### Repo & API
-- [x] Root `package.json` with npm workspaces `api`, `ui`, `packages/shared`; rename `project-template-api` → `@automobile/api`.
+- [x] Root `package.json` with npm workspaces `api`, `ui`, `packages/shared`; rename `project-template-api` → `@erp-software/api`.
 - [x] Remove healthcare leftovers (`api/docs/*`, `ui/docs/*`).
 - [x] oxlint + Prettier (shared config), Vitest + Supertest with a test database, pino request logging with request id.
 - [x] `APP_TIMEZONE=Asia/Kolkata` default; add `CORS_ORIGIN` to the env schema.

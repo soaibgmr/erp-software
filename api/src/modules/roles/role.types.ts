@@ -1,4 +1,4 @@
-import type { RoleCreate, RoleUpdate } from "@automobile/shared";
+import type { RoleCreate, RoleUpdate } from "@erp-software/shared";
 
 export type CreateRoleDto = RoleCreate;
 export type UpdateRoleDto = RoleUpdate;

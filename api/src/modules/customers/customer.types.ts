@@ -1,4 +1,4 @@
-import type { CustomerCreate, CustomerType, CustomerUpdate } from "@automobile/shared";
+import type { CustomerCreate, CustomerType, CustomerUpdate } from "@erp-software/shared";
 
 export type CreateCustomerDto = CustomerCreate;
 export type UpdateCustomerDto = CustomerUpdate;

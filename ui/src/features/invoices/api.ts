@@ -1,5 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { InvoiceStatus, PaymentMethod } from "@automobile/shared";
+import type { InvoiceStatus, PaymentMethod } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { api } from "@/lib/api-client";
 import type {

@@ -33,7 +33,7 @@ const errorResponse = (description: string, code: string) => ({
 export const openApiDocument = {
   openapi: "3.1.0",
   info: {
-    title: "Automobile.In ERP API",
+    title: "ERP Software API",
     version: "0.1.0",
     description:
       "Every `/api/v1` route (except health) requires the `clientid` header when `CLIENT_ID` is set. " +

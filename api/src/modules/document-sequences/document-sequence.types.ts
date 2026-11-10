@@ -1,4 +1,4 @@
-import type { DocumentSequenceUpdate, DocumentType } from "@automobile/shared";
+import type { DocumentSequenceUpdate, DocumentType } from "@erp-software/shared";
 
 export type { DocumentType };
 export type UpdateDocumentSequenceDto = DocumentSequenceUpdate;

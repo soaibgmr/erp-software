@@ -1,4 +1,4 @@
-import type { Permission } from "@automobile/shared";
+import type { Permission } from "@erp-software/shared";
 
 // Set on res.locals.auth by AuthMiddleware.requireAuth.
 export interface AuthContext {

@@ -1,6 +1,6 @@
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { Monitor, Undo2 } from "lucide-react";
-import { formatINR } from "@automobile/shared";
+import { formatINR } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";

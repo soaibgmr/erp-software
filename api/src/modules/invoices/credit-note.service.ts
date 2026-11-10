@@ -1,5 +1,5 @@
 import { inject, injectable } from "inversify";
-import { formatQty, fromMilli, milliToDecimal, toMilli } from "@automobile/shared";
+import { formatQty, fromMilli, milliToDecimal, toMilli } from "@erp-software/shared";
 import { TYPES } from "../../config/ioc.types";
 import { canAccessBranch, type AuthContext } from "../../common/auth-context";
 import { badRequest, conflict, fieldErrors, forbidden, notFound } from "../../common/http-error";

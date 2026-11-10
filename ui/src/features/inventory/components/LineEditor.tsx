@@ -1,5 +1,5 @@
 import { Trash2 } from "lucide-react";
-import { formatQty } from "@automobile/shared";
+import { formatQty } from "@erp-software/shared";
 import { Input } from "@/components/ui/Field";
 import { ApiError } from "@/lib/api-client";
 import type { ItemDetail, ItemSearchResult } from "@/lib/types";

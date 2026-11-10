@@ -1,5 +1,5 @@
 import { inject, injectable } from "inversify";
-import { itemRuleIssues } from "@automobile/shared";
+import { itemRuleIssues } from "@erp-software/shared";
 import { TYPES } from "../../config/ioc.types";
 import type { AuthContext } from "../../common/auth-context";
 import { conflict, fieldErrors, notFound } from "../../common/http-error";

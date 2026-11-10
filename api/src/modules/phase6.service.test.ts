@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { inflateRawSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
-import { reportQuerySchema, tallyExportQuerySchema, type ReportResult } from "@automobile/shared";
+import { reportQuerySchema, tallyExportQuerySchema, type ReportResult } from "@erp-software/shared";
 import { HttpError } from "../common/http-error";
 import { buildXlsx } from "../common/xlsx";
 import { authFor, branch, ids, stub } from "../test/fakes";

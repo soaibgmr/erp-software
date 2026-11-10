@@ -9,7 +9,7 @@ import {
   type InvoiceStatus,
   type PaymentMethod,
   type Permission,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Badge, type Tone } from "@/components/ui/Badge";
 import { invoicePrintPath, openPrintTab } from "@/lib/print";

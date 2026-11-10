@@ -16,7 +16,7 @@ import type {
   StockTransferStatus,
   SupplyType,
   UserStatus,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 
 export interface BranchSummary {
   id: string;

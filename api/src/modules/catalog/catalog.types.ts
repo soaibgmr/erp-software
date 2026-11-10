@@ -1,4 +1,4 @@
-import type { HsnSacKind } from "@automobile/shared";
+import type { HsnSacKind } from "@erp-software/shared";
 
 // The small masters behind item and vehicle forms. They share one module because they share
 // one shape: name-like key unique among active rows, soft delete, list without pagination.

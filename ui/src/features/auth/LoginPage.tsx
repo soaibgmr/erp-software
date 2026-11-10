@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Navigate, useLocation } from "react-router";
-import { loginSchema } from "@automobile/shared";
+import { loginSchema } from "@erp-software/shared";
 import type { z } from "zod";
 import { useAuth } from "@/app/auth";
 import { Logo } from "@/app/AppShell";
@@ -50,7 +50,7 @@ export function LoginPage() {
           <Logo className="size-11" />
           <div>
             <p className="eyebrow text-slate">Workshop & parts ERP</p>
-            <h1 className="text-page font-bold tracking-[-0.01em] text-ink">Automobile.In</h1>
+            <h1 className="text-page font-bold tracking-[-0.01em] text-ink">ERP Software</h1>
           </div>
         </div>
         <form onSubmit={onSubmit} noValidate className="rounded-card border border-border bg-surface p-6">

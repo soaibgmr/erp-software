@@ -4,7 +4,7 @@ import {
   type ReportCell,
   type ReportColumn,
   type ReportTable as Table,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 import { cn, formatDate, formatDateTime } from "@/lib/utils";
 
 const NUMERIC = new Set(["money", "qty", "int", "percent"]);

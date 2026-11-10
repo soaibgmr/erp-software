@@ -1,4 +1,4 @@
-import type { BillDiscount } from "@automobile/shared";
+import type { BillDiscount } from "@erp-software/shared";
 import type { CartBody } from "@/features/invoices/api";
 import type { CustomerCredit } from "@/lib/types";
 

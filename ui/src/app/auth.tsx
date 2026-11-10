@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Permission } from "@automobile/shared";
+import type { Permission } from "@erp-software/shared";
 import { api, session, setSessionExpiredHandler } from "@/lib/api-client";
 import type { Me } from "@/lib/types";
 

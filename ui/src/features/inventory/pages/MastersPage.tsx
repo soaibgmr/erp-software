@@ -11,7 +11,7 @@ import {
   hsnSacCreateSchema,
   vehicleMakeCreateSchema,
   vehicleModelCreateSchema,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";

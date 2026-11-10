@@ -1,18 +1,18 @@
 {
-  "name": "automobile-erp",
+  "name": "erp-software",
   "private": true,
   "version": "0.1.0",
-  "description": "Automobile.In ERP — workshop, POS billing and inventory",
+  "description": "ERP Software — workshop, POS billing and inventory",
   "workspaces": [
     "packages/shared",
     "api",
     "ui"
   ],
   "scripts": {
-    "build:shared": "npm run build -w @automobile/shared",
-    "dev:api": "npm run dev -w @automobile/api",
-    "dev:ui": "npm run dev -w @automobile/ui",
-    "build": "npm run build -w @automobile/shared && npm run build -w @automobile/api && npm run build -w @automobile/ui",
+    "build:shared": "npm run build -w @erp-software/shared",
+    "dev:api": "npm run dev -w @erp-software/api",
+    "dev:ui": "npm run dev -w @erp-software/ui",
+    "build": "npm run build -w @erp-software/shared && npm run build -w @erp-software/api && npm run build -w @erp-software/ui",
     "typecheck": "npm run build:shared && npm run typecheck --workspaces",
     "lint": "oxlint",
     "format": "prettier --write .",

@@ -1,4 +1,4 @@
-import type { StockAdjustmentStatus, StockTransferStatus } from "@automobile/shared";
+import type { StockAdjustmentStatus, StockTransferStatus } from "@erp-software/shared";
 import type { Paginated } from "../../../common/pagination";
 import type { Db } from "../../../common/prisma-types";
 import type {

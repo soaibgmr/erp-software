@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Search, Wrench } from "lucide-react";
 import type { z } from "zod";
-import { formatINR, formatQty, GST_RATES, labourServiceCreateSchema } from "@automobile/shared";
+import { formatINR, formatQty, GST_RATES, labourServiceCreateSchema } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";

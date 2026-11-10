@@ -10,7 +10,7 @@ import {
   vehicleMakeUpdateSchema,
   vehicleModelCreateSchema,
   vehicleModelUpdateSchema,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 import { searchQuery } from "../../common/schemas";
 import type { CatalogKind } from "./catalog.types";
 

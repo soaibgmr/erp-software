@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { formatINR, PAYMENT_METHOD_LABELS, PAYMENT_METHODS, type PaymentMethod } from "@automobile/shared";
+import { formatINR, PAYMENT_METHOD_LABELS, PAYMENT_METHODS, type PaymentMethod } from "@erp-software/shared";
 import { Button } from "@/components/ui/Button";
 import { Field, FormGrid, Input, Select, Textarea } from "@/components/ui/Field";
 import { Modal } from "@/components/ui/Modal";

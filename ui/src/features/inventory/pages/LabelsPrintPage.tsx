@@ -1,7 +1,7 @@
 import { useQueries } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router";
 import { ArrowLeft, Printer } from "lucide-react";
-import { formatINR, priceWithTax } from "@automobile/shared";
+import { formatINR, priceWithTax } from "@erp-software/shared";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Field";
 import { ErrorBanner, Skeleton } from "@/components/ui/States";

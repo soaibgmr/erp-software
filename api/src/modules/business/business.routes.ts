@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { businessUpdateSchema } from "@automobile/shared";
+import { businessUpdateSchema } from "@erp-software/shared";
 import { container } from "../../config/inversify.config";
 import { TYPES } from "../../config/ioc.types";
 import type { AuthMiddleware } from "../../middleware/auth";

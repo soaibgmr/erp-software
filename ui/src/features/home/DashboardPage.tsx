@@ -8,7 +8,7 @@ import {
   formatQty,
   PAYMENT_METHOD_LABELS,
   type DashboardRange,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";

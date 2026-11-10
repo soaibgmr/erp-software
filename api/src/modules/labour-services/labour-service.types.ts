@@ -1,4 +1,4 @@
-import type { LabourServiceCreate, LabourServiceUpdate } from "@automobile/shared";
+import type { LabourServiceCreate, LabourServiceUpdate } from "@erp-software/shared";
 
 export type CreateLabourServiceDto = LabourServiceCreate;
 export type UpdateLabourServiceDto = LabourServiceUpdate;

@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Loader2, Search } from "lucide-react";
-import { formatINR } from "@automobile/shared";
+import { formatINR } from "@erp-software/shared";
 import { Input } from "@/components/ui/Field";
 import { useDebounced } from "@/lib/hooks";
 import type { ItemSearchResult } from "@/lib/types";

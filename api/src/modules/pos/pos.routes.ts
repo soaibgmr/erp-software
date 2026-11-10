@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { heldCartCreateSchema, quoteSchema } from "@automobile/shared";
+import { heldCartCreateSchema, quoteSchema } from "@erp-software/shared";
 import { container } from "../../config/inversify.config";
 import { TYPES } from "../../config/ioc.types";
 import { idParamSchema } from "../../common/schemas";

@@ -15,7 +15,7 @@ import {
   type ReportResult,
   type ReportTable,
   type TallyExportQuery,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 import { TYPES } from "../../config/ioc.types";
 import { env } from "../../config/env";
 import type { AuthContext } from "../../common/auth-context";

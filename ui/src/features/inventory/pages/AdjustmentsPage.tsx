@@ -1,6 +1,6 @@
 import { useNavigate, useSearchParams } from "react-router";
 import { ClipboardList, Plus } from "lucide-react";
-import { formatINR, STOCK_ADJUSTMENT_REASON_LABELS, type StockAdjustmentStatus } from "@automobile/shared";
+import { formatINR, STOCK_ADJUSTMENT_REASON_LABELS, type StockAdjustmentStatus } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";

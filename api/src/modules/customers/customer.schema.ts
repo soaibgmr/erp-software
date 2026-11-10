@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CUSTOMER_TYPES, customerCreateSchema, customerUpdateSchema, mobileSchema } from "@automobile/shared";
+import { CUSTOMER_TYPES, customerCreateSchema, customerUpdateSchema, mobileSchema } from "@erp-software/shared";
 import { paginationQuery, searchQuery } from "../../common/schemas";
 
 export { customerCreateSchema as createCustomerSchema, customerUpdateSchema as updateCustomerSchema };

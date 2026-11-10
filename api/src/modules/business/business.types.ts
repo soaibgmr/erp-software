@@ -1,4 +1,4 @@
-import type { BusinessUpdate } from "@automobile/shared";
+import type { BusinessUpdate } from "@erp-software/shared";
 
 export type UpdateBusinessDto = BusinessUpdate;
 

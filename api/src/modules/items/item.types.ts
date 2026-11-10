@@ -1,4 +1,4 @@
-import type { ItemCreate, ItemUnit, ItemUpdate, StockStatus } from "@automobile/shared";
+import type { ItemCreate, ItemUnit, ItemUpdate, StockStatus } from "@erp-software/shared";
 
 export type CreateItemDto = ItemCreate;
 export type UpdateItemDto = ItemUpdate;

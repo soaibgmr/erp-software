@@ -1,7 +1,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { ArrowLeft, Loader2, Printer } from "lucide-react";
-import { stateName, type PrintParam } from "@automobile/shared";
+import { stateName, type PrintParam } from "@erp-software/shared";
 import { Logo } from "@/app/AppShell";
 import { Button } from "@/components/ui/Button";
 import { ErrorBanner } from "@/components/ui/States";

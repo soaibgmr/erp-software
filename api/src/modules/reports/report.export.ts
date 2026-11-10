@@ -1,4 +1,4 @@
-import { toCsv, type ReportCell, type ReportColumn, type ReportResult } from "@automobile/shared";
+import { toCsv, type ReportCell, type ReportColumn, type ReportResult } from "@erp-software/shared";
 import { buildXlsx, type XlsxCell } from "../../common/xlsx";
 
 // Turns a report result into a downloadable CSV or Excel file. Tables follow each other in the

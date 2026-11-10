@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Customer } from "@/lib/types";
 import { Link, useNavigate, useParams } from "react-router";
 import { FileText, NotebookPen, Pencil } from "lucide-react";
-import { CUSTOMER_TYPE_LABELS, formatINR, formatMobile, stateName } from "@automobile/shared";
+import { CUSTOMER_TYPE_LABELS, formatINR, formatMobile, stateName } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";

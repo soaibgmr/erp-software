@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { formatINR } from "@automobile/shared";
+import { formatINR } from "@erp-software/shared";
 import { Button } from "@/components/ui/Button";
 import { Field, FormGrid, Input, Textarea } from "@/components/ui/Field";
 import { Modal } from "@/components/ui/Modal";

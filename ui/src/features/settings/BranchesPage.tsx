@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Building2, Plus } from "lucide-react";
 import type { z } from "zod";
-import { branchCreateSchema, checkGstin, formatMobile, INDIAN_STATES, stateName } from "@automobile/shared";
+import { branchCreateSchema, checkGstin, formatMobile, INDIAN_STATES, stateName } from "@erp-software/shared";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";

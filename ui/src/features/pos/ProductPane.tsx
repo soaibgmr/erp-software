@@ -1,7 +1,7 @@
 import { forwardRef, useRef, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Loader2, PackageSearch, Search, Wrench } from "lucide-react";
-import { formatINR, formatQty } from "@automobile/shared";
+import { formatINR, formatQty } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Chip } from "@/components/ui/Controls";
 import { Input } from "@/components/ui/Field";

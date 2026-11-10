@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Search, UserRound } from "lucide-react";
 import type { z } from "zod";
-import { formatMobile, USER_STATUSES, userCreateSchema, userUpdateSchema, type UserStatus } from "@automobile/shared";
+import { formatMobile, USER_STATUSES, userCreateSchema, userUpdateSchema, type UserStatus } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Badge, type Tone } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";

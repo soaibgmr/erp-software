@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-The REST API of Automobile.In ERP (Express 5, PostgreSQL via Prisma 7). It lives in an npm-workspaces monorepo next to `ui/` (React) and `packages/shared/` (zod schemas, permission catalog, GST/money helpers used by both). Product docs are in `../docs/` (PRD, development plan, design patterns, design system).
+The REST API of ERP Software (Express 5, PostgreSQL via Prisma 7). It lives in an npm-workspaces monorepo next to `ui/` (React) and `packages/shared/` (zod schemas, permission catalog, GST/money helpers used by both). Product docs are in `../docs/` (PRD, development plan, design patterns, design system).
 
 Phase 1 modules: `users` (auth), `roles`, `branches`, `business`, `settings`, `document-sequences`, `customers`, `audit`, plus `health`.
 Phase 3 modules: `shifts`, `pos` (quote, held carts), `invoices` (charge, list/detail/print, cancel, payments, credit notes).
@@ -27,7 +27,7 @@ npm run db:seed      # idempotent admin seed via src/prisma/seed.ts (needs SEED_
 npm run db:studio
 ```
 
-`npm test` runs Vitest (`vitest.config.mts` supplies a test env; tests use in-memory fakes from `src/test/fakes.ts` and Supertest against routes that answer before any query, so no database is needed). Lint with `npm run lint` (oxlint) from the repo root. `@automobile/shared` must be built (`npm run build:shared` at the root) before the API typechecks or runs; it is ESM and loaded through Node's `require(esm)`.
+`npm test` runs Vitest (`vitest.config.mts` supplies a test env; tests use in-memory fakes from `src/test/fakes.ts` and Supertest against routes that answer before any query, so no database is needed). Lint with `npm run lint` (oxlint) from the repo root. `@erp-software/shared` must be built (`npm run build:shared` at the root) before the API typechecks or runs; it is ESM and loaded through Node's `require(esm)`.
 
 In Prisma 7, `db:migrate` does **not** regenerate the client after a schema change. Run `npm run db:generate` afterwards. VS Code keeps the old types until its TS server restarts, so editor errors can be stale while `tsc` passes.
 

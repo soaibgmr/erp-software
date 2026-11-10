@@ -10,7 +10,7 @@ import type {
   QuoteInput,
   StockStatus,
   SupplyType,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 
 export type CreateInvoiceDto = InvoiceCreate;
 export type QuoteDtoInput = QuoteInput;

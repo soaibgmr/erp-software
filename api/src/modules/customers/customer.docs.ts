@@ -1,4 +1,4 @@
-import { CUSTOMER_TYPES } from "@automobile/shared";
+import { CUSTOMER_TYPES } from "@erp-software/shared";
 import {
   fromZod,
   operation,

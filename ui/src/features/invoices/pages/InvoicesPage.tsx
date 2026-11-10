@@ -10,7 +10,7 @@ import {
   PAYMENT_METHODS,
   type InvoiceStatus,
   type PaymentMethod,
-} from "@automobile/shared";
+} from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";

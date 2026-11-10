@@ -1,5 +1,5 @@
 import type { Prisma } from "@prisma/client";
-import { milliToDecimal, stockStatus, toMilli } from "@automobile/shared";
+import { milliToDecimal, stockStatus, toMilli } from "@erp-software/shared";
 import type { ItemStockDto } from "../items/item.types";
 
 type Qty = Prisma.Decimal | string | number;

@@ -1,4 +1,4 @@
-import type { HeldCartCreate } from "@automobile/shared";
+import type { HeldCartCreate } from "@erp-software/shared";
 
 export type CreateHeldCartDto = HeldCartCreate;
 

@@ -1,4 +1,4 @@
-import type { DashboardRange, PaymentMethod } from "@automobile/shared";
+import type { DashboardRange, PaymentMethod } from "@erp-software/shared";
 
 export interface DashboardScopeDto {
   branchIds: string[];

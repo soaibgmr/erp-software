@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { describe, expect, it } from "vitest";
-import { openingBalanceCreateSchema } from "@automobile/shared";
+import { openingBalanceCreateSchema } from "@erp-software/shared";
 import { HttpError } from "../common/http-error";
 import type { Db } from "../common/prisma-types";
 import type { IUnitOfWork } from "../common/unit-of-work";

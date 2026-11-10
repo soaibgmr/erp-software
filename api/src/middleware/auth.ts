@@ -2,7 +2,7 @@ import { inject, injectable } from "inversify";
 import type { RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
-import { isPermission, type Permission } from "@automobile/shared";
+import { isPermission, type Permission } from "@erp-software/shared";
 import { TYPES } from "../config/ioc.types";
 import { env } from "../config/env";
 import { badRequest, forbidden, unauthorized } from "../common/http-error";

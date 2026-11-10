@@ -1,6 +1,6 @@
 import { inject, injectable } from "inversify";
 import { Prisma, PrismaClient } from "@prisma/client";
-import type { HeldCartCreate } from "@automobile/shared";
+import type { HeldCartCreate } from "@erp-software/shared";
 import { TYPES } from "../../config/ioc.types";
 import type { Db } from "../../common/prisma-types";
 import { loadUserNames } from "../../common/user-names";

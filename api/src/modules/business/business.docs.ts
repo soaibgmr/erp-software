@@ -1,4 +1,4 @@
-import { businessUpdateSchema } from "@automobile/shared";
+import { businessUpdateSchema } from "@erp-software/shared";
 import { fromZod, operation, type Paths, ref, type SchemaObject, success } from "../../docs/openapi.helpers";
 
 const s = { type: ["string", "null"] };

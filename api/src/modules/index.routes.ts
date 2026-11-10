@@ -34,7 +34,7 @@ import { authRouter, usersRouter } from "./users/user.routes";
 export const publicRoutes = Router();
 
 publicRoutes.get("/", (req, res) => {
-  sendSuccess(res, null, { message: "Automobile.In ERP API" });
+  sendSuccess(res, null, { message: "ERP Software API" });
 });
 if (isSwaggerEnabled) publicRoutes.use("/docs", docsRouter);
 
