@@ -17,8 +17,8 @@ export class SettingsService implements ISettingsService {
     @inject(TYPES.AuditService) private readonly audit: IAuditService,
   ) {}
 
-  async getAll(): Promise<AllSettingsDto> {
-    const stored = await this.settings.findAll();
+  async getAll(businessId: string): Promise<AllSettingsDto> {
+    const stored = await this.settings.findAll(businessId);
     const entries = SETTINGS_GROUPS.map((group) => [
       group,
       this.parse(group, stored.find((s) => s.group === group)?.value),
@@ -26,8 +26,8 @@ export class SettingsService implements ISettingsService {
     return Object.fromEntries(entries) as AllSettingsDto;
   }
 
-  async get<G extends SettingsGroup>(group: G): Promise<SettingsValue<G>> {
-    return this.parse(group, (await this.settings.find(group))?.value);
+  async get<G extends SettingsGroup>(businessId: string, group: G): Promise<SettingsValue<G>> {
+    return this.parse(group, (await this.settings.find(businessId, group))?.value);
   }
 
   async update<G extends SettingsGroup>(auth: AuthContext, group: G, input: unknown): Promise<SettingsValue<G>> {
@@ -36,10 +36,10 @@ export class SettingsService implements ISettingsService {
     const patch = patchOf(schema).safeParse(input ?? {});
     if (!patch.success) throw badRequest("Invalid request body", z.flattenError(patch.error));
 
-    const before = await this.get(group);
+    const before = await this.get(auth.businessId, group);
     const after = schema.parse({ ...before, ...stripUndefined(patch.data) }) as SettingsValue<G>;
 
-    await this.settings.upsert(group, after, auth.userId);
+    await this.settings.upsert(auth.businessId, group, after, auth.userId);
     await this.audit.record(auth, {
       action: `settings.${group}.update`,
       entity: "Setting",

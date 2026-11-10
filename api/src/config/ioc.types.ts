@@ -10,6 +10,17 @@ export const TYPES = {
   RefreshTokenRepository: Symbol.for("RefreshTokenRepository"),
   UserService: Symbol.for("UserService"),
   UserController: Symbol.for("UserController"),
+  AuthTokenRepository: Symbol.for("AuthTokenRepository"),
+  AccountService: Symbol.for("AccountService"),
+
+  // Email (shared by every module)
+  MailService: Symbol.for("MailService"),
+
+  // Platform admin (approves shops)
+  PlatformRepository: Symbol.for("PlatformRepository"),
+  PlatformService: Symbol.for("PlatformService"),
+  PlatformController: Symbol.for("PlatformController"),
+  PlatformAuthMiddleware: Symbol.for("PlatformAuthMiddleware"),
 
   // Roles
   RoleRepository: Symbol.for("RoleRepository"),
@@ -85,6 +96,7 @@ export const TYPES = {
   CartPricer: Symbol.for("CartPricer"),
   InvoiceService: Symbol.for("InvoiceService"),
   InvoicePostingService: Symbol.for("InvoicePostingService"),
+  InvoiceMailer: Symbol.for("InvoiceMailer"),
   PaymentService: Symbol.for("PaymentService"),
   OpeningBalanceService: Symbol.for("OpeningBalanceService"),
   CreditNoteService: Symbol.for("CreditNoteService"),

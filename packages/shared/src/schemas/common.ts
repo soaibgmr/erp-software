@@ -19,6 +19,18 @@ export const mobileSchema = z
   .refine(isValidMobile, "Enter a 10-digit mobile number")
   .transform(normalizeMobile);
 
+// Mobile number or email in one box.
+export const loginIdentifierSchema = z
+  .string()
+  .trim()
+  .min(1, "Enter your mobile number or email")
+  .max(255)
+  .refine(
+    (v) => (v.includes("@") ? z.email().safeParse(v).success : isValidMobile(v)),
+    "Enter a 10-digit mobile number or an email",
+  )
+  .transform((v) => (v.includes("@") ? v.toLowerCase() : normalizeMobile(v)));
+
 export const optionalMobileSchema = z
   .string()
   .trim()

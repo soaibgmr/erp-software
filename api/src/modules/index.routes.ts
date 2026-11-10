@@ -27,6 +27,7 @@ import { settingsRouter } from "./settings/settings.routes";
 import { shiftsRouter } from "./shifts/shift.routes";
 import { stockRouter } from "./stock/stock.routes";
 import { authRouter, usersRouter } from "./users/user.routes";
+import { platformRouter } from "./platform/platform.routes";
 
 // Every router in the app is mounted here. Add new modules to `apiRoutes`.
 
@@ -47,6 +48,8 @@ apiRoutes.use("/health", healthRouter);
 apiRoutes.use(verifyClientId);
 
 apiRoutes.use("/auth", authRouter);
+// The platform admin's console (approves shops); separate tokens, no shop data.
+apiRoutes.use("/platform", platformRouter);
 apiRoutes.use("/users", usersRouter);
 apiRoutes.use("/roles", rolesRouter);
 apiRoutes.use("/permissions", permissionsRouter);

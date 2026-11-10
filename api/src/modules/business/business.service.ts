@@ -14,14 +14,14 @@ export class BusinessService implements IBusinessService {
     @inject(TYPES.AuditService) private readonly audit: IAuditService,
   ) {}
 
-  async get(): Promise<BusinessResponseDto> {
-    const business = await this.business.get();
-    if (!business) throw notFound("Business profile is not set up. Run `npm run db:seed`.");
+  async get(businessId: string): Promise<BusinessResponseDto> {
+    const business = await this.business.get(businessId);
+    if (!business) throw notFound("Business not found");
     return business;
   }
 
   async update(auth: AuthContext, input: UpdateBusinessDto): Promise<BusinessResponseDto> {
-    const before = await this.get();
+    const before = await this.get(auth.businessId);
 
     // The schema checks GSTIN vs state when both are sent; re-check against stored values for partial updates.
     const gstin = input.gstin === undefined ? before.gstin : input.gstin;

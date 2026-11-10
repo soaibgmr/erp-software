@@ -22,7 +22,7 @@ interface KindConfig {
   toDto: (row: Row) => CatalogDto;
   searchWhere: (search: string) => object;
   // Rows that still point at this record and block deleting it.
-  usage?: (p: PrismaClient, id: string) => Promise<number>;
+  usage?: (p: PrismaClient, businessId: string, id: string) => Promise<number>;
 }
 
 const CONFIG: Record<CatalogKind, KindConfig> = {
@@ -37,7 +37,7 @@ const CONFIG: Record<CatalogKind, KindConfig> = {
       itemCount: (r._count as { items: number }).items,
     }),
     searchWhere: (s) => ({ name: { contains: s, mode: "insensitive" } }),
-    usage: (p, id) => p.item.count({ where: { categoryId: id, deletedAt: null } }),
+    usage: (p, businessId, id) => p.item.count({ where: { businessId, categoryId: id, deletedAt: null } }),
   },
   brands: {
     delegate: (p) => p.brand as unknown as Delegate,
@@ -45,7 +45,7 @@ const CONFIG: Record<CatalogKind, KindConfig> = {
     orderBy: { name: "asc" },
     toDto: (r) => ({ id: r.id, name: r.name as string, itemCount: (r._count as { items: number }).items }),
     searchWhere: (s) => ({ name: { contains: s, mode: "insensitive" } }),
-    usage: (p, id) => p.item.count({ where: { brandId: id, deletedAt: null } }),
+    usage: (p, businessId, id) => p.item.count({ where: { businessId, brandId: id, deletedAt: null } }),
   },
   hsnSac: {
     delegate: (p) => p.hsnSac as unknown as Delegate,
@@ -66,7 +66,7 @@ const CONFIG: Record<CatalogKind, KindConfig> = {
     orderBy: { name: "asc" },
     toDto: (r) => ({ id: r.id, name: r.name as string, modelCount: (r._count as { models: number }).models }),
     searchWhere: (s) => ({ name: { contains: s, mode: "insensitive" } }),
-    usage: (p, id) => p.vehicleModel.count({ where: { makeId: id, deletedAt: null } }),
+    usage: (p, businessId, id) => p.vehicleModel.count({ where: { businessId, makeId: id, deletedAt: null } }),
   },
   vehicleModels: {
     delegate: (p) => p.vehicleModel as unknown as Delegate,
@@ -88,10 +88,11 @@ const CONFIG: Record<CatalogKind, KindConfig> = {
 export class CatalogRepository implements ICatalogRepository {
   constructor(@inject(TYPES.PrismaClient) private readonly prisma: PrismaClient) {}
 
-  async list(kind: CatalogKind, { search, makeId }: ListCatalogQuery): Promise<CatalogDto[]> {
+  async list(businessId: string, kind: CatalogKind, { search, makeId }: ListCatalogQuery): Promise<CatalogDto[]> {
     const c = CONFIG[kind];
     const rows = await c.delegate(this.prisma).findMany({
       where: {
+        businessId,
         deletedAt: null,
         ...(search && c.searchWhere(search)),
         ...(kind === "vehicleModels" && makeId && { makeId }),
@@ -103,13 +104,17 @@ export class CatalogRepository implements ICatalogRepository {
     return rows.map(c.toDto);
   }
 
-  async findById(kind: CatalogKind, id: string): Promise<CatalogDto | null> {
+  async findById(businessId: string, kind: CatalogKind, id: string): Promise<CatalogDto | null> {
     const c = CONFIG[kind];
-    const row = await c.delegate(this.prisma).findFirst({ where: { id, deletedAt: null }, select: c.select });
+    const row = await c.delegate(this.prisma).findFirst({
+      where: { id, businessId, deletedAt: null },
+      select: c.select,
+    });
     return row && c.toDto(row);
   }
 
   async findByKey(
+    businessId: string,
     kind: CatalogKind,
     key: string,
     scope: { makeId?: string },
@@ -118,6 +123,7 @@ export class CatalogRepository implements ICatalogRepository {
     const field = kind === "hsnSac" ? "code" : "name";
     return CONFIG[kind].delegate(this.prisma).findFirst({
       where: {
+        businessId,
         deletedAt: null,
         [field]: { equals: key, mode: "insensitive" },
         ...(kind === "vehicleModels" && { makeId: scope.makeId }),
@@ -127,26 +133,28 @@ export class CatalogRepository implements ICatalogRepository {
     });
   }
 
-  async create(kind: CatalogKind, data: CatalogInput): Promise<CatalogDto> {
+  async create(businessId: string, kind: CatalogKind, data: CatalogInput): Promise<CatalogDto> {
     const c = CONFIG[kind];
-    const row = await c.delegate(this.prisma).create({ data, select: c.select });
+    const row = await c.delegate(this.prisma).create({ data: { ...data, businessId }, select: c.select });
     return c.toDto(row);
   }
 
-  async update(kind: CatalogKind, id: string, data: CatalogInput): Promise<CatalogDto | null> {
-    const { count } = await CONFIG[kind].delegate(this.prisma).updateMany({ where: { id, deletedAt: null }, data });
-    return count ? this.findById(kind, id) : null;
+  async update(businessId: string, kind: CatalogKind, id: string, data: CatalogInput): Promise<CatalogDto | null> {
+    const { count } = await CONFIG[kind]
+      .delegate(this.prisma)
+      .updateMany({ where: { id, businessId, deletedAt: null }, data });
+    return count ? this.findById(businessId, kind, id) : null;
   }
 
-  async softDelete(kind: CatalogKind, id: string): Promise<boolean> {
+  async softDelete(businessId: string, kind: CatalogKind, id: string): Promise<boolean> {
     const { count } = await CONFIG[kind].delegate(this.prisma).updateMany({
-      where: { id, deletedAt: null },
+      where: { id, businessId, deletedAt: null },
       data: { deletedAt: new Date() },
     });
     return count > 0;
   }
 
-  usage(kind: CatalogKind, id: string): Promise<number> {
-    return CONFIG[kind].usage?.(this.prisma, id) ?? Promise.resolve(0);
+  usage(businessId: string, kind: CatalogKind, id: string): Promise<number> {
+    return CONFIG[kind].usage?.(this.prisma, businessId, id) ?? Promise.resolve(0);
   }
 }

@@ -27,17 +27,12 @@ export class AuditRepository implements IAuditRepository {
     await db.auditLog.create({ data });
   }
 
-  async list({
-    page,
-    limit,
-    entity,
-    entityId,
-    actorId,
-    action,
-    from,
-    to,
-  }: ListAuditLogsQuery): Promise<Paginated<AuditLogResponseDto>> {
+  async list(
+    businessId: string,
+    { page, limit, entity, entityId, actorId, action, from, to }: ListAuditLogsQuery,
+  ): Promise<Paginated<AuditLogResponseDto>> {
     const where: Prisma.AuditLogWhereInput = {
+      businessId,
       entity,
       entityId,
       actorId,

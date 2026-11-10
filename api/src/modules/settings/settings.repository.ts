@@ -8,19 +8,22 @@ import type { SettingsGroup, StoredSetting } from "./settings.types";
 export class SettingsRepository implements ISettingsRepository {
   constructor(@inject(TYPES.PrismaClient) private readonly prisma: PrismaClient) {}
 
-  findAll(): Promise<StoredSetting[]> {
-    return this.prisma.setting.findMany({ select: { group: true, value: true } });
+  findAll(businessId: string): Promise<StoredSetting[]> {
+    return this.prisma.setting.findMany({ where: { businessId }, select: { group: true, value: true } });
   }
 
-  find(group: SettingsGroup): Promise<StoredSetting | null> {
-    return this.prisma.setting.findUnique({ where: { group }, select: { group: true, value: true } });
+  find(businessId: string, group: SettingsGroup): Promise<StoredSetting | null> {
+    return this.prisma.setting.findUnique({
+      where: { businessId_group: { businessId, group } },
+      select: { group: true, value: true },
+    });
   }
 
-  async upsert(group: SettingsGroup, value: object, updatedById: string): Promise<void> {
+  async upsert(businessId: string, group: SettingsGroup, value: object, updatedById: string): Promise<void> {
     const json = value as Prisma.InputJsonObject;
     await this.prisma.setting.upsert({
-      where: { group },
-      create: { group, value: json, updatedById },
+      where: { businessId_group: { businessId, group } },
+      create: { businessId, group, value: json, updatedById },
       update: { value: json, updatedById },
     });
   }

@@ -2,7 +2,7 @@ import { inject, injectable } from "inversify";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { TYPES } from "../../config/ioc.types";
 import type { IBusinessRepository } from "./interfaces/ibusiness.repository";
-import type { BusinessResponseDto, UpdateBusinessDto } from "./business.types";
+import type { BusinessResponseDto, BusinessSummary, UpdateBusinessDto } from "./business.types";
 
 const businessSelect = {
   id: true,
@@ -27,8 +27,16 @@ const businessSelect = {
 export class BusinessRepository implements IBusinessRepository {
   constructor(@inject(TYPES.PrismaClient) private readonly prisma: PrismaClient) {}
 
-  get(): Promise<BusinessResponseDto | null> {
-    return this.prisma.business.findFirst({ select: businessSelect, orderBy: { createdAt: "asc" } });
+  get(id: string): Promise<BusinessResponseDto | null> {
+    return this.prisma.business.findUnique({ where: { id }, select: businessSelect });
+  }
+
+  async getSummary(id: string): Promise<BusinessSummary | null> {
+    const row = await this.prisma.business.findUnique({
+      where: { id },
+      select: { id: true, legalName: true, tradeName: true, status: true },
+    });
+    return row && { id: row.id, name: row.tradeName ?? row.legalName, status: row.status };
   }
 
   update(id: string, data: UpdateBusinessDto): Promise<BusinessResponseDto> {

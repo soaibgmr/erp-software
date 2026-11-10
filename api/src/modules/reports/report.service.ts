@@ -395,7 +395,7 @@ export class ReportService implements IReportService {
 
   // GSTR-1 is filed per GSTIN: the branches in scope must share one.
   private async gstinFor(scope: BranchScope): Promise<string> {
-    const business = await this.reports.businessName();
+    const business = await this.reports.businessName(scope.businessId);
     const gstins = new Set(scope.branches.map((b) => b.gstin ?? business.gstin));
     if (gstins.size > 1) throw badRequest("These branches file under different GSTINs. Choose one branch.");
     const [gstin] = gstins;
@@ -883,7 +883,7 @@ export class ReportService implements IReportService {
     }
 
     vouchers.sort((a, b) => (a.date === b.date ? 0 : a.date < b.date ? -1 : 1));
-    const business = await this.reports.businessName();
+    const business = await this.reports.businessName(scope.businessId);
     return {
       fileName: `tally_${p.fromDay.replace(/-/g, "")}-${p.toDay.replace(/-/g, "")}.xml`,
       xml: buildTallyXml(business.legalName, vouchers),

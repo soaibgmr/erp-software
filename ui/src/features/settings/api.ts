@@ -92,6 +92,12 @@ export function useSaveUser() {
   });
 }
 
+export function useSetUserPassword() {
+  return useMutation({
+    mutationFn: ({ id, password }: { id: string; password: string }) => api.post(`/users/${id}/password`, { password }),
+  });
+}
+
 export function useDeleteUser() {
   const qc = useQueryClient();
   return useMutation({

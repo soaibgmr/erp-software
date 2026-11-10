@@ -104,7 +104,7 @@ export class DocumentSequenceService implements IDocumentSequenceService {
 
   private async assertBranch(auth: AuthContext, branchId: string) {
     if (!canAccessBranch(auth, branchId)) throw forbidden("You don't have access to this branch");
-    if (!(await this.branches.findById(branchId))) throw notFound("Branch not found");
+    if (!(await this.branches.findById(auth.businessId, branchId))) throw notFound("Branch not found");
   }
 }
 

@@ -32,15 +32,28 @@ describe("HTTP pipeline", () => {
     expect(res.body.error.message).toBe("Invalid or expired token");
   });
 
-  it("has no public registration", async () => {
-    const res = await request(app).post("/api/v1/auth/register").set("clientid", "test-client").send({});
-    expect(res.status).toBe(404);
+  it("validates shop registration bodies", async () => {
+    const res = await request(app)
+      .post("/api/v1/auth/register")
+      .set("clientid", "test-client")
+      .send({ shopName: "A", mobile: "12345" });
+    expect(res.status).toBe(400);
+    expect(res.body.error.details.fieldErrors.mobile).toBeTruthy();
+    expect(res.body.error.details.fieldErrors.password).toBeTruthy();
   });
 
-  it("validates login bodies", async () => {
-    const res = await request(app).post("/api/v1/auth/login").set("clientid", "test-client").send({ email: "nope" });
+  it("validates login bodies (mobile number or email)", async () => {
+    const res = await request(app)
+      .post("/api/v1/auth/login")
+      .set("clientid", "test-client")
+      .send({ identifier: "12345", password: "x" });
     expect(res.status).toBe(400);
-    expect(res.body.error.details.fieldErrors.email).toBeTruthy();
+    expect(res.body.error.details.fieldErrors.identifier).toBeTruthy();
+  });
+
+  it("platform routes reject requests without a platform token", async () => {
+    const res = await request(app).get("/api/v1/platform/businesses").set("clientid", "test-client");
+    expect(res.status).toBe(401);
   });
 
   it("allows the UI origin through CORS with the branch header", async () => {

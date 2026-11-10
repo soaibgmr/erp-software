@@ -19,7 +19,7 @@ import type {
 // Resolves a cart against master data and prices it with the shared GST engine.
 export interface ICartPricer {
   price(auth: AuthContext, branchId: string, input: QuoteDtoInput): Promise<PricedCartResult>;
-  customerCredit(customerId: string): Promise<CustomerCredit>;
+  customerCredit(auth: AuthContext, customerId: string): Promise<CustomerCredit>;
 }
 
 export interface IInvoicePostingService {
@@ -31,6 +31,14 @@ export interface IInvoicePostingService {
     input: CreateInvoiceDto,
     idempotencyKey?: string,
   ): Promise<{ invoice: InvoiceDetailDto; replayed: boolean }>;
+}
+
+// Emails a bill to a customer.
+export interface IInvoiceMailer {
+  // Sends now; throws when it fails.
+  send(auth: AuthContext, invoiceId: string, to: string): Promise<void>;
+  // Sends without delaying the caller; failures are logged.
+  emailInBackground(auth: AuthContext, invoiceId: string, to: string): void;
 }
 
 export interface IInvoiceService {

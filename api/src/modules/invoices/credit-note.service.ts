@@ -176,7 +176,7 @@ export class CreditNoteService implements ICreditNoteService {
   ): Promise<Paginated<CreditNoteDto>> {
     let branchIds: string[];
     if (auth.isOwner && !currentBranchId) {
-      branchIds = (await this.branches.list({ includeInactive: true })).map((b) => b.id);
+      branchIds = (await this.branches.list(auth.businessId, { includeInactive: true })).map((b) => b.id);
     } else {
       if (!currentBranchId) throw badRequest("Choose a branch");
       if (!canAccessBranch(auth, currentBranchId)) throw forbidden("You don't have access to this branch");

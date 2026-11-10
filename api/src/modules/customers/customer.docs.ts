@@ -66,8 +66,8 @@ export const customerPaths: Paths = {
   "/api/v1/customers/lookup": {
     get: operation({
       tag,
-      summary: "Find a customer by mobile",
-      description: "Returns `data: null` when no active customer has the number.",
+      summary: "Find a customer by mobile number or email",
+      description: "`q` is a 10-digit mobile or an email. Returns `data: null` when no active customer matches.",
       parameters: queryParams(lookupCustomerQuerySchema),
       responses: { 200: success("Customer or null", { oneOf: [ref("Customer"), { type: "null" }] }) },
     }),

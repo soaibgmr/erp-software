@@ -65,7 +65,7 @@ export class InvoiceController {
   };
 
   customerCredit = async (_req: Request, res: Response) => {
-    sendSuccess(res, await this.pricer.customerCredit(res.locals.params.customerId));
+    sendSuccess(res, await this.pricer.customerCredit(res.locals.auth, res.locals.params.customerId));
   };
 
   // ---------- Payments ----------

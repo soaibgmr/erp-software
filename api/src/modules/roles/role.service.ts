@@ -15,34 +15,35 @@ export class RoleService implements IRoleService {
     @inject(TYPES.AuditService) private readonly audit: IAuditService,
   ) {}
 
-  list(): Promise<RoleResponseDto[]> {
-    return this.roles.list();
+  list(auth: AuthContext): Promise<RoleResponseDto[]> {
+    return this.roles.list(auth.businessId);
   }
 
-  async getById(id: string): Promise<RoleResponseDto> {
-    const role = await this.roles.findById(id);
+  async getById(auth: AuthContext, id: string): Promise<RoleResponseDto> {
+    const role = await this.roles.findById(auth.businessId, id);
     if (!role) throw notFound("Role not found");
     return role;
   }
 
   async create(auth: AuthContext, input: CreateRoleDto): Promise<RoleResponseDto> {
     this.assertCanGrant(auth, input.permissions);
-    if (await this.roles.existsByName(input.name)) throw conflict(`A role named ${input.name} already exists`);
+    if (await this.roles.existsByName(auth.businessId, input.name))
+      throw conflict(`A role named ${input.name} already exists`);
 
-    const role = await this.roles.create({ ...input, permissions: [...new Set(input.permissions)] });
+    const role = await this.roles.create(auth.businessId, { ...input, permissions: [...new Set(input.permissions)] });
     await this.audit.record(auth, { action: "role.create", entity: "Role", entityId: role.id, after: role });
     return role;
   }
 
   async update(auth: AuthContext, id: string, input: UpdateRoleDto): Promise<RoleResponseDto> {
-    const before = await this.getById(id);
+    const before = await this.getById(auth, id);
     if (before.key === "OWNER") throw badRequest("The Owner role always has full access and can't be changed");
     if (input.permissions) this.assertCanGrant(auth, input.permissions);
-    if (input.name && (await this.roles.existsByName(input.name, id))) {
+    if (input.name && (await this.roles.existsByName(auth.businessId, input.name, id))) {
       throw conflict(`A role named ${input.name} already exists`);
     }
 
-    const role = await this.roles.update(id, {
+    const role = await this.roles.update(auth.businessId, id, {
       ...input,
       ...(input.permissions && { permissions: [...new Set(input.permissions)] }),
     });
@@ -52,12 +53,12 @@ export class RoleService implements IRoleService {
   }
 
   async remove(auth: AuthContext, id: string): Promise<void> {
-    const before = await this.getById(id);
+    const before = await this.getById(auth, id);
     if (before.isSystem) throw badRequest("System roles can't be deleted");
     if (before.userCount > 0) {
       throw conflict(`Move the ${before.userCount} user(s) with this role to another role first`);
     }
-    await this.roles.softDelete(id);
+    await this.roles.softDelete(auth.businessId, id);
     await this.audit.record(auth, { action: "role.delete", entity: "Role", entityId: id, before });
   }
 

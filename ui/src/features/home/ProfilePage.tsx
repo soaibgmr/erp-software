@@ -8,7 +8,7 @@ import { meKey, useAuth } from "@/app/auth";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { DescriptionList, PageHeader } from "@/components/ui/Controls";
-import { Field, FormGrid, Input } from "@/components/ui/Field";
+import { Field, FormGrid, Input, PasswordInput } from "@/components/ui/Field";
 import { useToast } from "@/components/ui/Toast";
 import { api } from "@/lib/api-client";
 import { applyServerErrors, formatDateTime } from "@/lib/utils";
@@ -78,7 +78,10 @@ export function ProfilePage() {
 
   return (
     <>
-      <PageHeader title="My profile" description={me.user.email} />
+      <PageHeader
+        title="My profile"
+        description={[me.user.mobile && formatMobile(me.user.mobile), me.user.email].filter(Boolean).join(" · ")}
+      />
       <div className="grid gap-6 xl:grid-cols-2">
         <form onSubmit={onProfile} noValidate>
           <Card>
@@ -122,12 +125,7 @@ export function ProfilePage() {
             <CardBody className="space-y-4">
               <Field label="Current password" error={password.formState.errors.currentPassword?.message}>
                 {(p) => (
-                  <Input
-                    {...p}
-                    type="password"
-                    autoComplete="current-password"
-                    {...password.register("currentPassword")}
-                  />
+                  <PasswordInput {...p} autoComplete="current-password" {...password.register("currentPassword")} />
                 )}
               </Field>
               <Field
@@ -135,12 +133,10 @@ export function ProfilePage() {
                 error={password.formState.errors.newPassword?.message}
                 helper="At least 8 characters."
               >
-                {(p) => (
-                  <Input {...p} type="password" autoComplete="new-password" {...password.register("newPassword")} />
-                )}
+                {(p) => <PasswordInput {...p} autoComplete="new-password" {...password.register("newPassword")} />}
               </Field>
               <Field label="Confirm new password" error={password.formState.errors.confirm?.message}>
-                {(p) => <Input {...p} type="password" autoComplete="new-password" {...password.register("confirm")} />}
+                {(p) => <PasswordInput {...p} autoComplete="new-password" {...password.register("confirm")} />}
               </Field>
               <div className="flex justify-end">
                 <Button type="submit" loading={changePassword.isPending} loadingText="Changing…">

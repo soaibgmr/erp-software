@@ -52,10 +52,13 @@ export class StockTransferService implements IStockTransferService {
   ): Promise<StockTransferDetailDto> {
     if (input.toBranchId === fromBranchId)
       throw fieldErrors([{ path: "toBranchId", message: "Choose a different branch" }]);
-    const to = await this.branches.findById(input.toBranchId);
+    const to = await this.branches.findById(auth.businessId, input.toBranchId);
     if (!to || !to.isActive) throw fieldErrors([{ path: "toBranchId", message: "Choose an active branch" }]);
 
-    const items = await this.stockRepo.findLineItems(input.lines.map((l) => l.itemId));
+    const items = await this.stockRepo.findLineItems(
+      auth.businessId,
+      input.lines.map((l) => l.itemId),
+    );
     const byId = new Map(items.map((i) => [i.id, i]));
     const missing = input.lines.findIndex((l) => !byId.has(l.itemId));
     if (missing >= 0) throw fieldErrors([{ path: `lines.${missing}.itemId`, message: "Item not found" }]);

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { optionalText, requiredText } from "./common.js";
+import { loginIdentifierSchema, optionalText, requiredText } from "./common.js";
 import { moneySchema, positiveQuantitySchema } from "./inventory.js";
 
 // ---------- Payments ----------
@@ -80,7 +80,8 @@ const cartLines = z.array(cartLineSchema).min(1, "Add at least one item").max(20
 
 // A manager authorising a discount or credit above the cashier's limit, at the counter.
 export const managerOverrideSchema = z.strictObject({
-  email: z.string().trim().toLowerCase().email("Enter the manager's email"),
+  // The manager's mobile number or email.
+  identifier: loginIdentifierSchema,
   password: z.string().min(1, "Enter the manager's password").max(72),
 });
 export type ManagerOverride = z.output<typeof managerOverrideSchema>;

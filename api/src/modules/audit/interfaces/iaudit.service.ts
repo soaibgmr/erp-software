@@ -5,5 +5,5 @@ import type { AuditActor, AuditEntry, AuditLogResponseDto, ListAuditLogsQuery } 
 export interface IAuditService {
   // Pass `db` to write inside the caller's transaction.
   record(actor: AuditActor, entry: AuditEntry, db?: Db): Promise<void>;
-  list(query: ListAuditLogsQuery): Promise<Paginated<AuditLogResponseDto>>;
+  list(businessId: string, query: ListAuditLogsQuery): Promise<Paginated<AuditLogResponseDto>>;
 }

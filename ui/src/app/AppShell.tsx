@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router";
-import { Bell, Car, Check, ChevronDown, LogOut, Menu as MenuIcon, Plus, Search, UserRound, X } from "lucide-react";
+import { Bell, Check, ChevronDown, LogOut, Menu as MenuIcon, Plus, Search, Store, UserRound, X } from "lucide-react";
 import { useAuth } from "./auth";
 import { useHotkey } from "./hotkeys";
 import { NAV } from "./nav";
@@ -17,7 +17,7 @@ export function Logo({ className }: { className?: string }) {
         className,
       )}
     >
-      <Car className="size-5" strokeWidth={2.25} aria-hidden />
+      <Store className="size-5" strokeWidth={2.25} aria-hidden />
     </span>
   );
 }
@@ -67,7 +67,9 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
         <div className="flex items-center gap-3 px-5 pt-5 pb-4">
           <Logo />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-card font-bold">ERP Software</p>
+            <p className="truncate text-card font-bold" title={me.business.name}>
+              {me.business.name}
+            </p>
             {multiBranch ? (
               <Menu
                 align="left"

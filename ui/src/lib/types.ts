@@ -1,5 +1,6 @@
 // Response shapes from the API (see the OpenAPI document at /docs).
 import type {
+  BusinessStatus,
   CustomerType,
   DocumentType,
   HsnSacKind,
@@ -28,7 +29,10 @@ export interface User {
   id: string;
   firstName: string;
   lastName: string;
-  email: string;
+  // Login id, unique across every shop.
+  mobile: string | null;
+  email: string | null;
+  emailVerifiedAt: string | null;
   phone: string | null;
   status: UserStatus;
   lastLoginAt: string | null;
@@ -40,6 +44,7 @@ export interface User {
 
 export interface Me {
   user: User;
+  business: { id: string; name: string; status: BusinessStatus };
   isOwner: boolean;
   permissions: Permission[];
   branches: (BranchSummary & { stateCode: string; city: string | null })[];
@@ -355,6 +360,7 @@ export interface CustomerCredit {
   type: CustomerType;
   name: string;
   mobile: string;
+  email: string | null;
   gstin: string | null;
   address: string | null;
   stateCode: string | null;
@@ -570,4 +576,27 @@ export interface HeldCart {
   };
   createdAt: string;
   createdBy: UserRef | null;
+}
+
+// ---- Platform admin (approves shops) ----
+export interface PlatformAdmin {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface PlatformBusiness {
+  id: string;
+  name: string;
+  legalName: string;
+  city: string | null;
+  stateCode: string;
+  gstin: string | null;
+  status: BusinessStatus;
+  statusNote: string | null;
+  approvedAt: string | null;
+  createdAt: string;
+  owner: { name: string; mobile: string | null; email: string | null; emailVerified: boolean } | null;
+  branchCount: number;
+  userCount: number;
 }

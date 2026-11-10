@@ -10,6 +10,7 @@ enum CustomerType {
 // Mobile uniqueness is enforced among non-deleted rows in CustomerService.
 model Customer {
   id             String       @id @default(uuid()) @db.Uuid
+  businessId     String       @map("business_id") @db.Uuid
   type           CustomerType @default(RETAIL)
   name           String       @db.VarChar(150)
   mobile         String       @db.VarChar(10)
@@ -31,6 +32,9 @@ model Customer {
 
   invoices Invoice[]
 
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@index([businessId])
   @@index([mobile])
   @@index([gstin])
   @@index([name])

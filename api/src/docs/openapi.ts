@@ -15,6 +15,7 @@ import { stockPaths, stockSchemas } from "../modules/stock/stock.docs";
 import { dashboardPaths, dashboardSchemas } from "../modules/dashboard/dashboard.docs";
 import { reportPaths, reportSchemas } from "../modules/reports/report.docs";
 import { userPaths, userSchemas } from "../modules/users/user.docs";
+import { platformPaths, platformSchemas } from "../modules/platform/platform.docs";
 import { ref } from "./openapi.helpers";
 
 // OpenAPI 3.1 document served by Swagger UI at /docs. Each module owns a `<module>.docs.ts`
@@ -43,7 +44,8 @@ export const openApiDocument = {
   servers: [{ url: "/" }],
   tags: [
     { name: "Health" },
-    { name: "Auth", description: "Login and refresh-token rotation." },
+    { name: "Auth", description: "Shop sign-up, login, password reset and refresh-token rotation." },
+    { name: "Platform", description: "The product owner's console: approve, reject and suspend shops." },
     { name: "Users - Me", description: "The authenticated user's own account, permissions and branches." },
     { name: "Users", description: "User management (`user.manage`)." },
     { name: "Roles", description: "Roles and the permission catalog." },
@@ -66,6 +68,7 @@ export const openApiDocument = {
   paths: {
     ...healthPaths,
     ...userPaths,
+    ...platformPaths,
     ...rolePaths,
     ...businessPaths,
     ...branchPaths,
@@ -114,6 +117,7 @@ export const openApiDocument = {
         },
       },
       ...userSchemas,
+      ...platformSchemas,
       ...roleSchemas,
       ...businessSchemas,
       ...branchSchemas,

@@ -9,11 +9,11 @@ export class SettingsController {
   constructor(@inject(TYPES.SettingsService) private readonly settingsService: ISettingsService) {}
 
   getAll = async (_req: Request, res: Response) => {
-    sendSuccess(res, await this.settingsService.getAll());
+    sendSuccess(res, await this.settingsService.getAll(res.locals.auth.businessId));
   };
 
   get = async (_req: Request, res: Response) => {
-    sendSuccess(res, await this.settingsService.get(res.locals.params.group));
+    sendSuccess(res, await this.settingsService.get(res.locals.auth.businessId, res.locals.params.group));
   };
 
   // The body is validated in the service, against the schema of the group in the path.

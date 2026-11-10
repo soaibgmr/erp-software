@@ -20,6 +20,7 @@ import { invoicePrintPath, paramFor, printInBackground } from "@/lib/print";
 import { errorMessage } from "@/lib/utils";
 import { BillSavedDialog, type SavedBill } from "./BillSavedDialog";
 import { cartReducer, lineKey, loadCart, qtyOf, saveCart, toCartBody, type CartLine } from "./cart";
+import { CustomerStep } from "./CustomerStep";
 import { CartPanel, MODES, type PosMode } from "./CartPanel";
 import {
   CloseShiftDialog,
@@ -196,12 +197,26 @@ function PosScreen({
   const hold = useHoldCart();
 
   useEffect(() => saveCart(branchId, cart), [branchId, cart]);
+  // Attaching or removing the customer moves the cursor to the next step (product search, or the customer box).
+  const customerId = cart.customer?.id ?? null;
+  useEffect(() => {
+    const t = setTimeout(() => (customerInput.current ?? search.current)?.focus(), 0);
+    return () => clearTimeout(t);
+  }, [customerId]);
 
   // Settings decide the default mode; credit always needs a customer.
   const preferred = chosenMode ?? settings?.pos.defaultPaymentMode ?? "CASH";
   const mode: PosMode = preferred === "CREDIT" && !cart.customer ? "CASH" : preferred;
 
-  const focusSearch = () => setTimeout(() => search.current?.focus(), 0);
+  // Every bill starts with the customer: while none is attached the customer box takes the cursor,
+  // afterwards the product search does. (The customer input is unmounted once someone is attached.)
+  const focusSearch = () => setTimeout(() => (customerInput.current ?? search.current)?.focus(), 0);
+  const needCustomer = () => {
+    if (cart.customer) return false;
+    toast({ message: "Enter the customer's mobile number or email first (F7)", tone: "error" });
+    customerInput.current?.focus();
+    return true;
+  };
   // A removed line can't stay selected.
   const selected = cart.lines.some((l) => lineKey(l) === selectedKey) ? selectedKey : null;
 
@@ -238,11 +253,13 @@ function PosScreen({
   const inCart = useMemo(() => new Map(cart.lines.map((l) => [`${l.kind}:${l.id}`, qtyOf(l)])), [cart.lines]);
 
   const add = (line: Omit<CartLine, "quantity" | "discount">) => {
+    if (needCustomer()) return;
     dispatch({ type: "add", line });
     focusSearch();
   };
 
   const onScan = async (code: string) => {
+    if (needCustomer()) return;
     try {
       add(itemToLine(await api.get<ItemSearchResult>(`/items/by-barcode/${encodeURIComponent(code)}`)));
     } catch (err) {
@@ -290,7 +307,7 @@ function PosScreen({
     }
   };
 
-  const submit = async (payments: PaymentRow[], override?: { email: string; password: string }) => {
+  const submit = async (payments: PaymentRow[], override?: { identifier: string; password: string }) => {
     try {
       const invoice = await charge.mutateAsync({
         key: cart.idempotencyKey,
@@ -328,6 +345,7 @@ function PosScreen({
   };
 
   const openPayment = () => {
+    if (needCustomer()) return;
     if (!cart.lines.length || totals.issues.length || charge.isPending || paying) return;
     if (!cart.lines.every((l) => qtyOf(l) > 0)) {
       toast({ message: "Every line needs a quantity", tone: "error" });
@@ -473,58 +491,8 @@ function PosScreen({
     keys,
   );
 
-  return (
-    <main className="grid min-h-0 flex-1 gap-4 overflow-y-auto p-4 lg:grid-cols-[minmax(0,1fr)_420px] lg:overflow-hidden">
-      <section className="flex min-h-[60vh] flex-col lg:min-h-0" aria-label="Products">
-        <ProductPane
-          ref={search}
-          inCart={inCart}
-          onAdd={add}
-          onScan={onScan}
-          onArrowDownEmpty={cart.lines.length ? toNavigation : undefined}
-        />
-      </section>
-      <div className="flex min-h-0 flex-col">
-        <CartPanel
-          cart={cart}
-          dispatch={dispatch}
-          totals={totals}
-          supplyType={supplyType}
-          approvalNote={approvalNote}
-          serverIssues={serverIssues}
-          mode={mode}
-          onMode={setMode}
-          onCharge={openPayment}
-          charging={charge.isPending}
-          selectedKey={selected}
-          onSelect={setSelectedKey}
-          lineDiscountKey={lineDiscountKey}
-          onLineDiscount={setLineDiscountKey}
-          billDiscountOpen={billDiscountOpen}
-          onBillDiscount={setBillDiscountOpen}
-          customerInput={customerInput}
-        />
-        <div className="mt-2 flex justify-between gap-2">
-          <Button variant="ghost" size="sm" disabled={!cart.lines.length} onClick={() => setHolding(true)}>
-            Hold cart (F8)
-          </Button>
-          {lastBill && (
-            <Button
-              variant="ghost"
-              size="sm"
-              icon={<Printer className="size-4" />}
-              onClick={() => printBill(lastBill)}
-              title={`Print ${lastBill.invoice.number} again (Ctrl+P)`}
-            >
-              Reprint {lastBill.invoice.number}
-            </Button>
-          )}
-          <Button variant="ghost" size="sm" disabled={!cart.lines.length && !cart.customer} onClick={newBill}>
-            New bill (F10)
-          </Button>
-        </div>
-      </div>
-
+  const dialogs = (
+    <>
       <BillSavedDialog
         bill={savedBill}
         format={printFormat}
@@ -597,6 +565,77 @@ function PosScreen({
         onClose={() => setResumeAsk(null)}
         onConfirm={() => resumeAsk && void resume(resumeAsk)}
       />
+    </>
+  );
+
+  // Step 1: no customer yet, so the screen only asks who the bill is for. Step 2 (below): billing.
+  if (!cart.customer) {
+    return (
+      <main className="flex min-h-0 flex-1 flex-col bg-canvas">
+        <CustomerStep
+          inputRef={customerInput}
+          waitingItems={cart.lines.length}
+          onAttach={(customer) => dispatch({ type: "setCustomer", customer })}
+          onHeld={onHeldOpen}
+          reprint={lastBill ? { number: lastBill.invoice.number, onPrint: () => printBill(lastBill) } : undefined}
+        />
+        {dialogs}
+      </main>
+    );
+  }
+
+  return (
+    <main className="grid min-h-0 flex-1 gap-4 overflow-y-auto p-4 lg:grid-cols-[minmax(0,1fr)_420px] lg:overflow-hidden">
+      <section className="flex min-h-[60vh] flex-col lg:min-h-0" aria-label="Products">
+        <ProductPane
+          ref={search}
+          inCart={inCart}
+          onAdd={add}
+          onScan={onScan}
+          onArrowDownEmpty={cart.lines.length ? toNavigation : undefined}
+        />
+      </section>
+      <div className="flex min-h-0 flex-col">
+        <CartPanel
+          cart={cart}
+          dispatch={dispatch}
+          totals={totals}
+          supplyType={supplyType}
+          approvalNote={approvalNote}
+          serverIssues={serverIssues}
+          mode={mode}
+          onMode={setMode}
+          onCharge={openPayment}
+          charging={charge.isPending}
+          selectedKey={selected}
+          onSelect={setSelectedKey}
+          lineDiscountKey={lineDiscountKey}
+          onLineDiscount={setLineDiscountKey}
+          billDiscountOpen={billDiscountOpen}
+          onBillDiscount={setBillDiscountOpen}
+        />
+        <div className="mt-2 flex justify-between gap-2">
+          <Button variant="ghost" size="sm" disabled={!cart.lines.length} onClick={() => setHolding(true)}>
+            Hold cart (F8)
+          </Button>
+          {lastBill && (
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Printer className="size-4" />}
+              onClick={() => printBill(lastBill)}
+              title={`Print ${lastBill.invoice.number} again (Ctrl+P)`}
+            >
+              Reprint {lastBill.invoice.number}
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" disabled={!cart.lines.length && !cart.customer} onClick={newBill}>
+            New bill (F10)
+          </Button>
+        </div>
+      </div>
+
+      {dialogs}
     </main>
   );
 }

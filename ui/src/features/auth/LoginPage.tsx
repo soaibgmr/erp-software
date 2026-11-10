@@ -1,27 +1,29 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Navigate, useLocation } from "react-router";
+import { Link, Navigate, useLocation, useNavigate } from "react-router";
 import { loginSchema } from "@erp-software/shared";
 import type { z } from "zod";
 import { useAuth } from "@/app/auth";
-import { Logo } from "@/app/AppShell";
 import { Button } from "@/components/ui/Button";
-import { Field, Input } from "@/components/ui/Field";
+import { Field, Input, PasswordInput } from "@/components/ui/Field";
 import { ErrorBanner } from "@/components/ui/States";
 import { ApiError } from "@/lib/api-client";
+import { platformLogin } from "@/features/platform/api";
+import { AuthLayout } from "./AuthLayout";
 
 type LoginForm = z.input<typeof loginSchema>;
 
 export function LoginPage() {
-  const { status, login } = useAuth();
+  const { status, login, notice } = useAuth();
   const location = useLocation();
-  const [formError, setFormError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const [formError, setFormError] = useState<{ title: string; message?: string } | null>(null);
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginForm>({ resolver: zodResolver(loginSchema), defaultValues: { email: "", password: "" } });
+  } = useForm<LoginForm>({ resolver: zodResolver(loginSchema), defaultValues: { identifier: "", password: "" } });
 
   if (status === "signed-in") {
     const from = (location.state as { from?: string } | null)?.from ?? "/";
@@ -31,45 +33,80 @@ export function LoginPage() {
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
     try {
-      await login(values.email, values.password);
+      await login(values.identifier, values.password);
     } catch (err) {
-      setFormError(
-        err instanceof ApiError && err.status === 401
-          ? "Email or password is incorrect."
-          : err instanceof Error
-            ? err.message
-            : "Couldn't sign in.",
-      );
+      if (err instanceof ApiError && err.status === 401) {
+        // One login page for everyone: an email that isn't a shop account may be the platform admin.
+        if (values.identifier.includes("@")) {
+          try {
+            await platformLogin(values.identifier, values.password);
+            navigate("/admin/shops", { replace: true });
+            return;
+          } catch {
+            // Not an admin either: show the normal message below.
+          }
+        }
+        setFormError({ title: "Username or password is incorrect." });
+      } else if (err instanceof ApiError && err.code === "BUSINESS_PENDING") {
+        setFormError({ title: "Your shop is waiting for approval", message: err.message });
+      } else if (err instanceof ApiError && err.code.startsWith("BUSINESS_")) {
+        setFormError({ title: "You can't log in right now", message: err.message });
+      } else {
+        setFormError({ title: err instanceof Error ? err.message : "Couldn't log in." });
+      }
     }
   });
 
+  const shown = formError ?? (notice ? { title: "You were logged out", message: notice } : null);
+
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-10">
-      <div className="w-full max-w-[400px]">
-        <div className="mb-8 flex items-center gap-3">
-          <Logo className="size-11" />
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Log in to your business to start billing."
+      footer={
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span>New to ERP Software?</span>
+          <Link
+            to="/register"
+            className="inline-flex h-10 items-center rounded-input border border-border px-4 font-medium text-navy-700 hover:bg-navy-50"
+          >
+            Register your business
+          </Link>
+        </div>
+      }
+    >
+      <form onSubmit={onSubmit} noValidate>
+        {shown && <ErrorBanner className="mt-6" title={shown.title} message={shown.message} />}
+        <div className="mt-8 space-y-5">
+          <Field label="Username" helper="Your mobile number or email" error={errors.identifier?.message}>
+            {(p) => (
+              <Input
+                {...p}
+                className="h-11"
+                placeholder="98765 43210 or you@shop.in"
+                autoComplete="username"
+                autoFocus
+                {...register("identifier")}
+              />
+            )}
+          </Field>
           <div>
-            <p className="eyebrow text-slate">Workshop & parts ERP</p>
-            <h1 className="text-page font-bold tracking-[-0.01em] text-ink">ERP Software</h1>
+            <Field label="Password" error={errors.password?.message}>
+              {(p) => (
+                <PasswordInput {...p} className="h-11" autoComplete="current-password" {...register("password")} />
+              )}
+            </Field>
+            <div className="mt-2 text-right">
+              <Link to="/forgot-password" className="text-helper font-medium text-navy-600 hover:underline">
+                Forgot password?
+              </Link>
+            </div>
           </div>
         </div>
-        <form onSubmit={onSubmit} noValidate className="rounded-card border border-border bg-surface p-6">
-          <h2 className="text-section font-semibold text-ink">Sign in</h2>
-          <p className="mt-1 text-helper text-slate">Use the account your owner or manager created for you.</p>
-          {formError && <ErrorBanner className="mt-4" title={formError} />}
-          <div className="mt-5 space-y-4">
-            <Field label="Email" error={errors.email?.message}>
-              {(p) => <Input {...p} type="email" autoComplete="username" autoFocus {...register("email")} />}
-            </Field>
-            <Field label="Password" error={errors.password?.message}>
-              {(p) => <Input {...p} type="password" autoComplete="current-password" {...register("password")} />}
-            </Field>
-          </div>
-          <Button type="submit" className="mt-6 w-full" loading={isSubmitting} loadingText="Signing in…">
-            Sign in
-          </Button>
-        </form>
-      </div>
-    </div>
+        <Button type="submit" size="lg" className="mt-6 w-full" loading={isSubmitting} loadingText="Logging in…">
+          Log in
+        </Button>
+      </form>
+    </AuthLayout>
   );
 }

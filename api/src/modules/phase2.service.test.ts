@@ -38,7 +38,7 @@ const item2 = "40000000-0000-4000-8000-000000000002";
 
 function settings(overrides: { allowNegativeStock?: boolean; adjustmentApprovalLimit?: number } = {}) {
   return stub<ISettingsService>({
-    get: async (group: SettingsGroup) => {
+    get: async (_businessId: string, group: SettingsGroup) => {
       const value = defaultSettings(group) as Record<string, unknown>;
       if (group === "pos" && overrides.allowNegativeStock !== undefined)
         value.allowNegativeStock = overrides.allowNegativeStock;
@@ -82,7 +82,7 @@ class FakeStockRepo {
         b.inTransit = Math.max(b.inTransit + delta, 0);
         this.balances.set(k, b);
       },
-      findLineItems: async (idList) =>
+      findLineItems: async (_businessId, idList) =>
         idList
           .filter((id) => [item1, item2].includes(id))
           .map((id) => ({
@@ -306,7 +306,7 @@ describe("StockTransferService", () => {
       }),
       closeTransfer: async () => true,
     });
-    const branches = stub<IBranchRepository>({ findById: async (id) => branch(id) });
+    const branches = stub<IBranchRepository>({ findById: async (_businessId, id) => branch(id) });
     const sequences = stub<IDocumentSequenceService>({
       next: async () => ({ number: "STR-26-00001", sequence: 1, financialYear: 2026 }),
     });
@@ -405,8 +405,8 @@ describe("ItemService", () => {
     updatedAt: new Date(),
   };
   const items = stub<IItemRepository>({
-    findById: async (id) => (id === item1 ? existing : null),
-    findSkuOwner: async (sku) => (sku === "TAKEN" ? { id: item2, name: "Air filter" } : null),
+    findById: async (_businessId, id) => (id === item1 ? existing : null),
+    findSkuOwner: async (_businessId, sku) => (sku === "TAKEN" ? { id: item2, name: "Air filter" } : null),
     findBarcodeOwners: async () => [],
     hasStock: async () => true,
   });

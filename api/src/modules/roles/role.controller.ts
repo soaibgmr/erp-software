@@ -14,11 +14,11 @@ export class RoleController {
   };
 
   list = async (_req: Request, res: Response) => {
-    sendSuccess(res, await this.roleService.list());
+    sendSuccess(res, await this.roleService.list(res.locals.auth));
   };
 
   getById = async (_req: Request, res: Response) => {
-    sendSuccess(res, await this.roleService.getById(res.locals.params.id));
+    sendSuccess(res, await this.roleService.getById(res.locals.auth, res.locals.params.id));
   };
 
   create = async (_req: Request, res: Response) => {

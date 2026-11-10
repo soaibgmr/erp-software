@@ -254,8 +254,11 @@ export class ReportRepository implements IReportRepository {
        ORDER BY p.received_at`;
   }
 
-  async businessName() {
-    const b = await this.prisma.business.findFirst({ select: { legalName: true, gstin: true } });
+  async businessName(businessId: string) {
+    const b = await this.prisma.business.findUnique({
+      where: { id: businessId },
+      select: { legalName: true, gstin: true },
+    });
     return b ?? { legalName: "ERP Software", gstin: null };
   }
 }

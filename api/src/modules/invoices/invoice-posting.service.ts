@@ -24,7 +24,12 @@ import type { IShiftService } from "../shifts/interfaces/ishift.service";
 import type { IStockService } from "../stock/interfaces/istock.service";
 import type { IUserRepository } from "../users/interfaces/iuser.repository";
 import type { IInvoiceRepository } from "./interfaces/iinvoice.repository";
-import type { ICartPricer, IInvoicePostingService, IInvoiceService } from "./interfaces/iinvoice.service";
+import type {
+  ICartPricer,
+  IInvoiceMailer,
+  IInvoicePostingService,
+  IInvoiceService,
+} from "./interfaces/iinvoice.service";
 import { deriveStatus } from "./invoice.rules";
 import type { CreateInvoiceDto, InvoiceDetailDto } from "./invoice.types";
 
@@ -50,6 +55,7 @@ export class InvoicePostingService implements IInvoicePostingService {
     @inject(TYPES.UserRepository) private readonly users: IUserRepository,
     @inject(TYPES.SettingsService) private readonly settings: ISettingsService,
     @inject(TYPES.AuditService) private readonly audit: IAuditService,
+    @inject(TYPES.InvoiceMailer) private readonly mailer: IInvoiceMailer,
   ) {}
 
   async charge(auth: AuthContext, branchId: string, input: CreateInvoiceDto, idempotencyKey?: string) {
@@ -87,13 +93,11 @@ export class InvoicePostingService implements IInvoicePostingService {
     const { paidPaise } = paymentSummary(totalPaise, input.payments);
     if (paidPaise > totalPaise) throw fieldErrors([{ path: "payments", message: "Payments are more than the total" }]);
     const unpaidPaise = totalPaise - paidPaise;
+    // Every bill belongs to a customer (found by mobile or email at the counter): no walk-in bills.
     const customer = priced.customer;
-    if (unpaidPaise > 0 && !customer) {
+    if (!customer) {
       throw fieldErrors([
-        {
-          path: "payments",
-          message: "A walk-in customer must pay the full bill. Add the customer to keep the rest as dues.",
-        },
+        { path: "customerId", message: "Enter the customer's mobile number or email before billing" },
       ]);
     }
 
@@ -107,7 +111,7 @@ export class InvoicePostingService implements IInvoicePostingService {
     if (creditExceeded && !hasPermission(auth, "credit.override")) approvals.push("credit");
     const approverId = approvals.length ? await this.verifyOverride(auth, branchId, override, approvals) : null;
 
-    const { allowNegativeStock } = await this.settings.get("pos");
+    const { allowNegativeStock } = await this.settings.get(auth.businessId, "pos");
     const dueDate = unpaidPaise > 0 ? endOfDayAfter(new Date(), customer?.creditDays ?? 0, env.APP_TIMEZONE) : null;
 
     let invoiceId: string;
@@ -197,7 +201,7 @@ export class InvoicePostingService implements IInvoicePostingService {
           });
         }
 
-        await this.invoices.addOutboxEvent(tx, "InvoicePosted", { invoiceId: id, number, branchId });
+        await this.invoices.addOutboxEvent(tx, auth.businessId, "InvoicePosted", { invoiceId: id, number, branchId });
         if (input.heldCartId) await this.heldCarts.softDelete(input.heldCartId, tx);
         if (idempotencyKey) {
           await this.invoices.saveIdempotency(tx, {
@@ -240,6 +244,9 @@ export class InvoicePostingService implements IInvoicePostingService {
       throw err;
     }
 
+    // The customer gets the bill by email when we have their address. Never delays the counter.
+    if (customer?.email) this.mailer.emailInBackground(auth, invoiceId, customer.email);
+
     return { invoice: await this.invoiceService.getById(auth, invoiceId), replayed: false };
   }
 
@@ -269,9 +276,14 @@ export class InvoicePostingService implements IInvoicePostingService {
       .join(" and ");
     if (!override) throw approvalRequired(`A manager must approve ${what}`, approvals);
 
-    const creds = await this.users.findCredentialsByEmail(override.email);
-    const valid = creds && creds.status === "ACTIVE" && (await bcrypt.compare(override.password, creds.passwordHash));
-    if (!valid) throw approvalRequired("Manager email or password is wrong", approvals);
+    const creds = await this.users.findCredentialsByIdentifier(override.identifier);
+    const valid =
+      creds &&
+      creds.status === "ACTIVE" &&
+      // Only a manager of this shop can approve.
+      creds.businessId === auth.businessId &&
+      (await bcrypt.compare(override.password, creds.passwordHash));
+    if (!valid) throw approvalRequired("Manager mobile number or password is wrong", approvals);
 
     const manager = await this.users.findAuthUser(creds.id);
     const isOwner = manager?.role.key === "OWNER";

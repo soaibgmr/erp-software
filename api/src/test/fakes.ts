@@ -6,6 +6,8 @@ import type { RoleResponseDto } from "../modules/roles/role.types";
 import type { BranchResponseDto } from "../modules/branches/branch.types";
 
 export const ids = {
+  business: "30000000-0000-4000-8000-000000000001",
+  otherBusiness: "30000000-0000-4000-8000-000000000002",
   owner: "00000000-0000-4000-8000-000000000001",
   manager: "00000000-0000-4000-8000-000000000002",
   counter: "00000000-0000-4000-8000-000000000003",
@@ -20,6 +22,7 @@ export function authFor(kind: "owner" | "manager" | "counter", branchIds = [ids.
   if (kind === "owner") {
     return {
       userId: ids.owner,
+      businessId: ids.business,
       roleId: ids.ownerRole,
       roleKey: "OWNER",
       isOwner: true,
@@ -30,6 +33,7 @@ export function authFor(kind: "owner" | "manager" | "counter", branchIds = [ids.
   const key = kind === "manager" ? "BRANCH_MANAGER" : "COUNTER";
   return {
     userId: ids[kind],
+    businessId: ids.business,
     roleId: kind === "manager" ? ids.managerRole : ids.counterRole,
     roleKey: key,
     isOwner: false,
@@ -81,7 +85,7 @@ export class FakeAudit implements IAuditService {
   async record(_actor: unknown, entry: AuditEntry) {
     this.entries.push(entry);
   }
-  async list() {
+  async list(_businessId: string) {
     return { data: [], page: 1, limit: 20, total: 0 };
   }
 }

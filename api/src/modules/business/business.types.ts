@@ -20,3 +20,9 @@ export interface BusinessResponseDto {
   upiId: string | null;
   updatedAt: Date;
 }
+
+export interface BusinessSummary {
+  id: string;
+  name: string;
+  status: import("@prisma/client").BusinessStatus;
+}

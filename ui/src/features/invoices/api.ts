@@ -54,7 +54,8 @@ export interface ChargeBody extends CartBody {
   notes?: string | null;
   expectedTotal?: number;
   heldCartId?: string;
-  override?: { email: string; password: string };
+  // The approving manager signs in with their mobile number (or email).
+  override?: { identifier: string; password: string };
 }
 
 // Server-side totals for the cart (the POS also prices locally with the shared engine for instant feedback).

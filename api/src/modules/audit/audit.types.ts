@@ -11,6 +11,7 @@ export interface AuditEntry {
 }
 
 export interface CreateAuditLogData {
+  businessId: string | null;
   actorId: string | null;
   branchId: string | null;
   action: string;
@@ -45,4 +46,5 @@ export interface ListAuditLogsQuery {
   to?: Date;
 }
 
-export type AuditActor = Pick<AuthContext, "userId" | "ip"> | null;
+// Who did it and in which company. userId is null for platform-admin actions (the admin is named in the entry).
+export type AuditActor = { userId: string | null; businessId: string | null; ip?: AuthContext["ip"] } | null;

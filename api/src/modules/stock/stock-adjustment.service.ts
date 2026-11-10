@@ -48,7 +48,10 @@ export class StockAdjustmentService implements IStockAdjustmentService {
     branchId: string,
     input: CreateStockAdjustmentDto,
   ): Promise<StockAdjustmentDetailDto> {
-    const items = await this.stockRepo.findLineItems(input.lines.map((l) => l.itemId));
+    const items = await this.stockRepo.findLineItems(
+      auth.businessId,
+      input.lines.map((l) => l.itemId),
+    );
     const byId = new Map(items.map((i) => [i.id, i]));
     const missing = input.lines.findIndex((l) => !byId.has(l.itemId));
     if (missing >= 0) throw fieldErrors([{ path: `lines.${missing}.itemId`, message: "Item not found" }]);
@@ -60,8 +63,8 @@ export class StockAdjustmentService implements IStockAdjustmentService {
       0,
     );
     const [{ adjustmentApprovalLimit }, { allowNegativeStock }] = await Promise.all([
-      this.settings.get("inventory"),
-      this.settings.get("pos"),
+      this.settings.get(auth.businessId, "inventory"),
+      this.settings.get(auth.businessId, "pos"),
     ]);
     const needsApproval = totalPaise > toPaise(adjustmentApprovalLimit) && !hasPermission(auth, "stock.approve");
 
@@ -103,7 +106,7 @@ export class StockAdjustmentService implements IStockAdjustmentService {
 
   async approve(auth: AuthContext, branchId: string, id: string): Promise<StockAdjustmentDetailDto> {
     const adj = await this.pending(auth, branchId, id);
-    const { allowNegativeStock } = await this.settings.get("pos");
+    const { allowNegativeStock } = await this.settings.get(auth.businessId, "pos");
     await this.uow.run(async (tx) => {
       if (!(await this.docs.decideAdjustment(tx, id, "POSTED", auth.userId, null)))
         throw conflict("This adjustment was already decided");

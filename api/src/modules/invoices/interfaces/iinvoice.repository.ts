@@ -18,9 +18,9 @@ import type {
 
 export interface IInvoiceRepository {
   // ---- Master data for pricing ----
-  // Non-deleted items with their sellable quantity (on hand − reserved) in the branch.
-  findSaleItems(ids: string[], branchId: string): Promise<SaleItemRow[]>;
-  findSaleLabour(ids: string[]): Promise<SaleLabourRow[]>;
+  // Non-deleted items of the business with their sellable quantity (on hand − reserved) in the branch.
+  findSaleItems(businessId: string, ids: string[], branchId: string): Promise<SaleItemRow[]>;
+  findSaleLabour(businessId: string, ids: string[]): Promise<SaleLabourRow[]>;
   // Σ balance due of the customer's open invoices, in paise.
   customerOutstanding(customerId: string): Promise<number>;
 
@@ -69,5 +69,5 @@ export interface IInvoiceRepository {
     db: Db,
     data: { userId: string; key: string; scope: string; requestHash: string; resourceId: string },
   ): Promise<void>;
-  addOutboxEvent(db: Db, type: string, payload: Record<string, unknown>): Promise<void>;
+  addOutboxEvent(db: Db, businessId: string, type: string, payload: Record<string, unknown>): Promise<void>;
 }

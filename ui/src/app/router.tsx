@@ -6,6 +6,9 @@ import { ALL_NAV_ITEMS } from "./nav";
 import { Button } from "@/components/ui/Button";
 import { ErrorBanner } from "@/components/ui/States";
 import { LoginPage } from "@/features/auth/LoginPage";
+import { RegisterPage } from "@/features/auth/RegisterPage";
+import { ForgotPasswordPage, ResetPasswordPage, VerifyEmailPage } from "@/features/auth/PasswordPages";
+import { PlatformShell, PlatformShopsPage } from "@/features/platform/PlatformPages";
 import { CustomersPage } from "@/features/customers/CustomersPage";
 import { CustomerFormPage } from "@/features/customers/CustomerFormPage";
 import { CustomerDetailPage } from "@/features/customers/CustomerDetailPage";
@@ -105,7 +108,23 @@ const comingSoon = ALL_NAV_ITEMS.filter((i) => i.phase).map((i) => ({
 }));
 
 export const router = createBrowserRouter([
+  // Public pages: log in, shop sign-up, password reset and the links from emails.
   { path: "/login", element: <LoginPage /> },
+  { path: "/register", element: <RegisterPage /> },
+  { path: "/forgot-password", element: <ForgotPasswordPage /> },
+  { path: "/reset-password", element: <ResetPasswordPage /> },
+  { path: "/verify-email", element: <VerifyEmailPage /> },
+  // The platform admin's console (approves shops). Signs in on /login; its token is kept apart from shop sessions.
+  // One login page for shops and the platform admin; old links to /admin/login still work.
+  { path: "/admin/login", element: <Navigate to="/login" replace /> },
+  {
+    path: "/admin",
+    element: <PlatformShell />,
+    children: [
+      { index: true, element: <Navigate to="/admin/shops" replace /> },
+      { path: "shops", element: <PlatformShopsPage /> },
+    ],
+  },
   {
     element: <RequireAuth />,
     children: [
