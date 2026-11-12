@@ -19,7 +19,15 @@ app.use(requestLogger);
 app.use(
   cors({
     origin: (origin, callback) => callback(null, !origin || isAllowedOrigin(origin)),
-    allowedHeaders: ["Content-Type", "Authorization", "clientid", "x-branch-id", "x-request-id", "Idempotency-Key"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "clientid",
+      "x-branch-id",
+      "x-request-id",
+      "Idempotency-Key",
+      "x-scan-token",
+    ],
     exposedHeaders: ["x-request-id"],
   }),
 );

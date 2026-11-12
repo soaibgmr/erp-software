@@ -7,6 +7,7 @@ import { customerPaths, customerSchemas } from "../modules/customers/customer.do
 import { documentSequencePaths, documentSequenceSchemas } from "../modules/document-sequences/document-sequence.docs";
 import { healthPaths } from "../modules/health/health.docs";
 import { salesPaths, salesSchemas } from "../modules/invoices/invoice.docs";
+import { posScannerPaths, posScannerSchemas } from "../modules/pos-scanner/pos-scanner.docs";
 import { itemPaths, itemSchemas } from "../modules/items/item.docs";
 import { labourServicePaths, labourServiceSchemas } from "../modules/labour-services/labour-service.docs";
 import { rolePaths, roleSchemas } from "../modules/roles/role.docs";
@@ -60,6 +61,7 @@ export const openApiDocument = {
     { name: "Labour services" },
     { name: "Shifts", description: "Counter sessions: opening cash, counted vs expected at close." },
     { name: "POS", description: "Cart pricing and held carts." },
+    { name: "Phone scanner", description: "Pair a phone as a camera barcode scanner for the POS. The PC polls the scans." },
     { name: "Invoices", description: "Charge, payments, cancellation and credit notes." },
     { name: "Dashboard", description: "KPI cards, sales trend and low stock for a branch or all branches." },
     { name: "Reports", description: "Sales, GST and stock reports as JSON, CSV or Excel; GSTR-1 portal JSON; Tally XML." },
@@ -81,6 +83,7 @@ export const openApiDocument = {
     ...labourServicePaths,
     ...stockPaths,
     ...salesPaths,
+    ...posScannerPaths,
     ...dashboardPaths,
     ...reportPaths,
   },
@@ -130,6 +133,7 @@ export const openApiDocument = {
       ...labourServiceSchemas,
       ...stockSchemas,
       ...salesSchemas,
+      ...posScannerSchemas,
       ...dashboardSchemas,
       ...reportSchemas,
     },

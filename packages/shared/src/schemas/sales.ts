@@ -179,3 +179,20 @@ export const heldCartCreateSchema = z.strictObject({
   billDiscount: billDiscountSchema.nullable().optional(),
 });
 export type HeldCartCreate = z.output<typeof heldCartCreateSchema>;
+
+// ---------- Phone scanner ----------
+
+// A barcode read by a paired phone (same limits as the item barcode lookup).
+export const scanEventCreateSchema = z.strictObject({
+  code: z.string().trim().min(1, "Barcode is required").max(64),
+});
+export type ScanEventCreate = z.output<typeof scanEventCreateSchema>;
+
+// The PC polls for scans after the last id it has seen (ids are sent as strings: they are bigints).
+export const scanPollQuerySchema = z.object({
+  after: z
+    .string()
+    .regex(/^\d{1,19}$/, "Must be a scan id")
+    .optional(),
+});
+export type ScanPollQuery = z.output<typeof scanPollQuerySchema>;

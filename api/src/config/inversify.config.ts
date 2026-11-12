@@ -131,6 +131,11 @@ import type { IPosService } from "../modules/pos/interfaces/ipos.service";
 import { HeldCartRepository } from "../modules/pos/held-cart.repository";
 import { PosService } from "../modules/pos/pos.service";
 import { PosController } from "../modules/pos/pos.controller";
+import type { IPosScannerRepository } from "../modules/pos-scanner/interfaces/ipos-scanner.repository";
+import type { IPosScannerService } from "../modules/pos-scanner/interfaces/ipos-scanner.service";
+import { PosScannerRepository } from "../modules/pos-scanner/pos-scanner.repository";
+import { PosScannerService } from "../modules/pos-scanner/pos-scanner.service";
+import { PosScannerController } from "../modules/pos-scanner/pos-scanner.controller";
 
 // Invoices
 import type { IInvoiceRepository } from "../modules/invoices/interfaces/iinvoice.repository";
@@ -194,6 +199,7 @@ container.bind<IStockRepository>(TYPES.StockRepository).to(StockRepository).inSi
 container.bind<IStockDocumentRepository>(TYPES.StockDocumentRepository).to(StockDocumentRepository).inSingletonScope();
 container.bind<IShiftRepository>(TYPES.ShiftRepository).to(ShiftRepository).inSingletonScope();
 container.bind<IHeldCartRepository>(TYPES.HeldCartRepository).to(HeldCartRepository).inSingletonScope();
+container.bind<IPosScannerRepository>(TYPES.PosScannerRepository).to(PosScannerRepository).inSingletonScope();
 container.bind<IInvoiceRepository>(TYPES.InvoiceRepository).to(InvoiceRepository).inSingletonScope();
 
 // Services
@@ -222,6 +228,7 @@ container.bind<IStockImportService>(TYPES.StockImportService).to(StockImportServ
 container.bind<IShiftService>(TYPES.ShiftService).to(ShiftService).inSingletonScope();
 container.bind<ICartPricer>(TYPES.CartPricer).to(CartPricer).inSingletonScope();
 container.bind<IPosService>(TYPES.PosService).to(PosService).inSingletonScope();
+container.bind<IPosScannerService>(TYPES.PosScannerService).to(PosScannerService).inSingletonScope();
 container.bind<IInvoiceService>(TYPES.InvoiceService).to(InvoiceService).inSingletonScope();
 container.bind<IInvoicePostingService>(TYPES.InvoicePostingService).to(InvoicePostingService).inSingletonScope();
 container.bind<IInvoiceMailer>(TYPES.InvoiceMailer).to(InvoiceMailer).inSingletonScope();
@@ -247,6 +254,7 @@ container.bind<LabourServiceController>(TYPES.LabourServiceController).to(Labour
 container.bind<StockController>(TYPES.StockController).to(StockController).inSingletonScope();
 container.bind<ShiftController>(TYPES.ShiftController).to(ShiftController).inSingletonScope();
 container.bind<PosController>(TYPES.PosController).to(PosController).inSingletonScope();
+container.bind<PosScannerController>(TYPES.PosScannerController).to(PosScannerController).inSingletonScope();
 container.bind<InvoiceController>(TYPES.InvoiceController).to(InvoiceController).inSingletonScope();
 
 container.bind<IReportRepository>(TYPES.ReportRepository).to(ReportRepository).inSingletonScope();

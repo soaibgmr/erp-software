@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { ChevronLeft, Clock, Keyboard, PauseCircle, Power, Printer } from "lucide-react";
+import { ChevronLeft, Clock, Keyboard, PauseCircle, Power, Printer, Smartphone } from "lucide-react";
 import { placeOfSupplyFor, priceCart, supplyTypeFor, type PrintFormat } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Logo } from "@/app/AppShell";
@@ -31,6 +31,8 @@ import {
   PaymentDialog,
   type PaymentRow,
 } from "./Dialogs";
+import { usePhoneScanner, type PhoneScanner } from "./phone-scanner";
+import { PhoneScannerDialog } from "./PhoneScannerDialog";
 import { itemToLine, ProductPane } from "./ProductPane";
 import { ShortcutsDialog } from "./ShortcutsDialog";
 
@@ -44,6 +46,9 @@ export function PosPage() {
   const [heldOpen, setHeldOpen] = useState(false);
   const [closing, setClosing] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [phoneOpen, setPhoneOpen] = useState(false);
+  // A phone paired as a camera barcode scanner; its scans go into this branch's bill.
+  const scanner = usePhoneScanner(branch?.id ?? null);
 
   useHotkey("f1", () => setHelpOpen(true), { skipInDialogs: true });
 
@@ -54,8 +59,11 @@ export function PosPage() {
         onHeld={() => setHeldOpen(true)}
         onCloseShift={() => setClosing(true)}
         onHelp={() => setHelpOpen(true)}
+        onPhone={() => setPhoneOpen(true)}
+        phone={scanner.session ? (scanner.phoneConnected ? "connected" : "waiting") : "off"}
       />
       <ShortcutsDialog open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <PhoneScannerDialog open={phoneOpen} onClose={() => setPhoneOpen(false)} scanner={scanner} />
       {shift.isPending ? (
         <div className="grid flex-1 gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_420px]">
           <Skeleton className="h-full rounded-card" />
@@ -79,6 +87,7 @@ export function PosPage() {
             heldOpen={heldOpen}
             onHeldOpen={() => setHeldOpen(true)}
             onHeldClose={() => setHeldOpen(false)}
+            subscribeScans={scanner.subscribe}
           />
           <CloseShiftDialog
             shift={shift.data}
@@ -97,11 +106,15 @@ function PosHeader({
   onHeld,
   onCloseShift,
   onHelp,
+  onPhone,
+  phone,
 }: {
   shift: ShiftReport | null;
   onHeld: () => void;
   onCloseShift: () => void;
   onHelp: () => void;
+  onPhone: () => void;
+  phone: "off" | "waiting" | "connected";
 }) {
   const { me } = useAuth();
   const held = useHeldCarts();
@@ -140,6 +153,21 @@ function PosHeader({
         </button>
         {shift && (
           <>
+            <button
+              type="button"
+              onClick={onPhone}
+              className={headerButton}
+              title="Use a phone camera as a barcode scanner for this counter"
+            >
+              <Smartphone className="size-4" />
+              {phone === "off" ? "Scan with phone" : "Phone scanner"}
+              {phone !== "off" && (
+                <span
+                  className={`size-2 rounded-full ${phone === "connected" ? "bg-success" : "bg-yellow-500"}`}
+                  aria-label={phone === "connected" ? "Phone connected" : "Waiting for the phone"}
+                />
+              )}
+            </button>
             <button type="button" onClick={onHeld} className={headerButton}>
               <PauseCircle className="size-4" /> Held
               {held.data?.length ? <CountBadge tone="highlight">{held.data.length}</CountBadge> : null}
@@ -164,10 +192,12 @@ function PosScreen({
   heldOpen,
   onHeldOpen,
   onHeldClose,
+  subscribeScans,
 }: {
   heldOpen: boolean;
   onHeldOpen: () => void;
   onHeldClose: () => void;
+  subscribeScans: PhoneScanner["subscribe"];
 }) {
   const { branch, can } = useAuth();
   const branchId = branch?.id ?? "none";
@@ -268,6 +298,45 @@ function PosScreen({
       toast({ message, tone: "error" });
     }
   };
+
+  // Barcodes from a paired phone go through the same lookup as the counter scanner, one at a time
+  // and in order. Scanned before the customer is attached, they wait and are added right after.
+  const phoneQueue = useRef<string[]>([]);
+  const draining = useRef(false);
+  const scanRef = useRef(onScan);
+  const hasCustomer = useRef(Boolean(cart.customer));
+  useEffect(() => {
+    scanRef.current = onScan;
+    hasCustomer.current = Boolean(cart.customer);
+  });
+  const drainPhone = useRef(async () => {
+    if (draining.current) return;
+    draining.current = true;
+    try {
+      while (hasCustomer.current && phoneQueue.current.length) {
+        await scanRef.current(phoneQueue.current.shift()!);
+        // Let React apply the added line before the next scan (the same part again adds 1).
+        await new Promise((r) => setTimeout(r, 0));
+      }
+    } finally {
+      draining.current = false;
+    }
+  });
+  useEffect(
+    () =>
+      subscribeScans((codes) => {
+        phoneQueue.current.push(...codes);
+        if (!hasCustomer.current) {
+          toast({ message: "Part scanned on the phone. Attach the customer first; scanned parts are added then." });
+          return;
+        }
+        void drainPhone.current();
+      }),
+    [subscribeScans, toast],
+  );
+  useEffect(() => {
+    if (customerId) void drainPhone.current();
+  }, [customerId]);
 
   // Resume a held cart: re-price it on the server for names, rates and stock, then load it.
   const resume = async (held: HeldCart) => {

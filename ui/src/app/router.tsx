@@ -11,6 +11,7 @@ import { RegisterPage } from "@/features/auth/RegisterPage";
 import { ForgotPasswordPage, ResetPasswordPage, VerifyEmailPage } from "@/features/auth/PasswordPages";
 import { PlatformShell, PlatformShopsPage } from "@/features/platform/PlatformPages";
 import { PlatformDemoRequestsPage } from "@/features/platform/DemoRequestsPage";
+import { PhoneScanPage } from "@/features/pos-scanner/PhoneScanPage";
 import { CustomersPage } from "@/features/customers/CustomersPage";
 import { CustomerFormPage } from "@/features/customers/CustomerFormPage";
 import { CustomerDetailPage } from "@/features/customers/CustomerDetailPage";
@@ -124,6 +125,8 @@ export const router = createBrowserRouter([
       { path: "/forgot-password", element: <ForgotPasswordPage /> },
       { path: "/reset-password", element: <ResetPasswordPage /> },
       { path: "/verify-email", element: <VerifyEmailPage /> },
+      // The phone side of "Scan with phone" on the POS: no login, the QR code's link carries a one-counter token.
+      { path: "/scan/:sessionId", element: <PhoneScanPage /> },
       // The platform admin's console (approves shops). Signs in on /login; its token is kept apart from shop sessions.
       // One login page for shops and the platform admin; old links to /admin/login still work.
       { path: "/admin/login", element: <Navigate to="/login" replace /> },

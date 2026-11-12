@@ -610,3 +610,28 @@ export interface PlatformBusiness {
   branchCount: number;
   userCount: number;
 }
+
+// ---------- Phone scanner (a phone paired with the POS as a camera barcode scanner) ----------
+
+export interface ScanSessionCreated {
+  id: string;
+  token: string;
+  expiresAt: string;
+}
+
+export interface ScanPoll {
+  scans: { id: string; code: string }[];
+  phoneConnected: boolean;
+  closed: boolean;
+}
+
+export interface ScanSessionInfo {
+  shopName: string;
+  branchName: string;
+}
+
+export interface ScanResult {
+  found: boolean;
+  name: string | null;
+  salePrice: string | null;
+}

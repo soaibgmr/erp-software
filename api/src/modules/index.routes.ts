@@ -23,6 +23,7 @@ import { itemsRouter } from "./items/item.routes";
 import { labourServicesRouter } from "./labour-services/labour-service.routes";
 import { permissionsRouter, rolesRouter } from "./roles/role.routes";
 import { posRouter } from "./pos/pos.routes";
+import { phoneScannerRouter, posScanSessionsRouter } from "./pos-scanner/pos-scanner.routes";
 import { settingsRouter } from "./settings/settings.routes";
 import { shiftsRouter } from "./shifts/shift.routes";
 import { stockRouter } from "./stock/stock.routes";
@@ -72,6 +73,9 @@ apiRoutes.use("/stock", stockRouter);
 
 // Phase 3: POS billing and invoices
 apiRoutes.use("/shifts", shiftsRouter);
+// Phone scanner: the PC side is mounted before /pos so it skips that router's middleware.
+apiRoutes.use("/pos/scan-sessions", posScanSessionsRouter);
+apiRoutes.use("/scan-sessions", phoneScannerRouter);
 apiRoutes.use("/pos", posRouter);
 apiRoutes.use("/invoices", invoicesRouter);
 apiRoutes.use("/payments", paymentsRouter);
