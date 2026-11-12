@@ -152,5 +152,5 @@ Migrations: `init` (users + refresh_tokens), then `phase1_masters_rbac`, which r
 ## Notes
 
 - `package.json` is `"type": "commonjs"` with `module: NodeNext`, so relative imports are written without file extensions.
-- `package.json` lists many transitive packages (e.g. `accepts`, `braces`, `debug`) as direct dependencies. The ones the code actually uses are `express`, `@prisma/*`, `pg`, `zod`, `dotenv`, `bcryptjs`, `jsonwebtoken`, `inversify`, `reflect-metadata` and `swagger-ui-express`.
+- `package.json` lists many transitive packages (e.g. `accepts`, `braces`, `debug`) as direct dependencies. The ones the code actually uses are `express`, `@prisma/*`, `pg`, `zod`, `dotenv`, `bcryptjs`, `jsonwebtoken`, `inversify`, `reflect-metadata` and `@sentry/node`.
 - `dist/` is build output. Don't edit it.

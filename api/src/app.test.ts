@@ -80,6 +80,18 @@ describe("HTTP pipeline", () => {
     }
   });
 
+  it("serves the Swagger UI page with its assets from the CDN", async () => {
+    const res = await request(app).get("/docs/");
+    expect(res.status).toBe(200);
+    expect(res.type).toBe("text/html");
+    expect(res.text).toContain("https://cdn.jsdelivr.net/npm/swagger-ui-dist@");
+    expect(res.text).toContain('url: "/docs/openapi.json"');
+
+    const bare = await request(app).get("/docs");
+    expect(bare.status).toBe(301);
+    expect(bare.headers.location).toBe("/docs/");
+  });
+
   it("documents the Phase 2 inventory routes", async () => {
     const res = await request(app).get("/docs/openapi.json");
     for (const path of [

@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "prisma generate && tsc -p tsconfig.build.json",
-    "bundle": "esbuild dist/vercel.js --bundle --platform=node --format=cjs --target=node22 --outfile=dist/bundle/vercel.cjs --external:@prisma/client --external:@prisma/adapter-pg --external:pg --external:pg-native --external:swagger-ui-express --external:@sentry/node --log-level=warning",
+    "bundle": "esbuild dist/vercel.js --bundle --platform=node --format=cjs --target=node22 --outfile=dist/bundle/vercel.cjs --external:@prisma/client --external:@prisma/adapter-pg --external:pg --external:pg-native --external:@sentry/node --log-level=warning",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -42,7 +42,6 @@
     "pino": "^10.4.0",
     "pino-http": "^11.0.0",
     "reflect-metadata": "^0.2.2",
-    "swagger-ui-express": "^5.0.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -53,7 +52,6 @@
     "@types/nodemailer": "8.0.2",
     "@types/pg": "^8.23.1",
     "@types/supertest": "^7.2.1",
-    "@types/swagger-ui-express": "^4.1.8",
     "esbuild": "0.28.2",
     "prisma": "7.10.1",
     "supertest": "^7.3.2",
