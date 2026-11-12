@@ -92,6 +92,11 @@ export const TYPES = {
   PosService: Symbol.for("PosService"),
   PosController: Symbol.for("PosController"),
 
+  // Phone as a barcode scanner for the POS
+  PosScannerRepository: Symbol.for("PosScannerRepository"),
+  PosScannerService: Symbol.for("PosScannerService"),
+  PosScannerController: Symbol.for("PosScannerController"),
+
   // Invoices, payments, credit notes
   InvoiceRepository: Symbol.for("InvoiceRepository"),
   CartPricer: Symbol.for("CartPricer"),

@@ -1,16 +1,18 @@
 name: CI/CD
 
-# Every PR and every push to main runs the checks.
-# A push to main that passes the checks then:
-#   1. applies Prisma migrations to the live (Supabase) database,
-#   2. deploys the API to Vercel production,
-#   3. deploys the UI to Vercel production.
-# Vercel's own Git auto-deploy for main is switched off in api/vercel.json and ui/vercel.json,
-# so production only ever gets code that passed CI, and the schema is migrated before the new API goes live.
+# Every PR and every push to main or dev runs the checks.
+# A push that passes the checks then deploys, API first, then UI:
+#   main → GitHub environment "production": migrate the live Supabase database, then `vercel deploy --prod`.
+#   dev  → GitHub environment "staging":    migrate the staging Supabase database, then a Vercel *preview*
+#          deploy (Preview-scoped env vars = staging settings), aliased to the fixed staging URLs
+#          https://erp-software-api-staging.vercel.app and https://erp-software-ui-staging.vercel.app.
+# Each GitHub environment holds its own DIRECT_URL, so dev can never migrate the live database.
+# Vercel's own Git auto-deploy is switched off for every branch in api/vercel.json and ui/vercel.json,
+# so every deployment comes from CI and the schema is always migrated before the new API goes live.
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
   workflow_dispatch:
 
@@ -33,11 +35,11 @@ jobs:
 
   migrate:
     needs: check
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
     runs-on: ubuntu-latest
-    environment: production
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
     concurrency:
-      group: production-deploy
+      group: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}-migrate
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
@@ -46,8 +48,9 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      # Direct (non-pooled, port 5432) Supabase connection; prisma.config.ts reads DIRECT_URL.
-      - name: Apply migrations to live
+      # Direct (non-pooled, port 5432) Supabase connection; prisma.config.ts reads DIRECT_URL
+      # from the job's GitHub environment (live for main, staging for dev).
+      - name: Apply migrations
         working-directory: api
         env:
           APP_ENV: live
@@ -58,9 +61,9 @@ jobs:
   deploy:
     needs: migrate
     runs-on: ubuntu-latest
-    environment: production
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
     concurrency:
-      group: production-deploy-${{ matrix.app }}
+      group: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}-deploy-${{ matrix.app }}
       cancel-in-progress: false
     strategy:
       # API first, then UI, so the UI never calls an API that is older than it.
@@ -69,8 +72,10 @@ jobs:
         include:
           - app: api
             project_secret: VERCEL_PROJECT_ID_API
+            staging_alias: erp-software-api-staging.vercel.app
           - app: ui
             project_secret: VERCEL_PROJECT_ID_UI
+            staging_alias: erp-software-ui-staging.vercel.app
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets[matrix.project_secret] }}
@@ -83,4 +88,12 @@ jobs:
       # Run from the repo root: the Vercel project's Root Directory (api/ or ui/) picks the app,
       # and Vercel builds it remotely with the settings in <app>/vercel.json, same as before.
       - name: Deploy ${{ matrix.app }} to production
+        if: github.ref == 'refs/heads/main'
         run: vercel deploy --prod --yes --archive=tgz --token=${{ secrets.VERCEL_TOKEN }}
+      # Preview deploy (uses the project's Preview env vars = staging), then point the fixed staging URL at it.
+      - name: Deploy ${{ matrix.app }} to staging
+        if: github.ref == 'refs/heads/dev'
+        run: |
+          url=$(vercel deploy --yes --archive=tgz --token=${{ secrets.VERCEL_TOKEN }})
+          echo "Deployed $url"
+          vercel alias set "$url" ${{ matrix.staging_alias }} --token=${{ secrets.VERCEL_TOKEN }}

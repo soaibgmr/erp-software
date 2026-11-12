@@ -236,6 +236,39 @@ export const HELP: HelpSection[] = [
         ],
       },
       {
+        id: "phone-scanner",
+        title: "Scan barcodes with your phone",
+        blocks: [
+          {
+            type: "p",
+            text: "No barcode scanner at the counter? Any phone with a camera can scan parts into the bill on the counter PC.",
+          },
+          {
+            type: "steps",
+            items: [
+              "On the counter PC, in POS billing, click **Scan with phone** at the top. A QR code opens.",
+              "On the phone, open the camera, point it at the QR code and open the link it shows.",
+              "Allow the camera when the phone asks. The PC shows **Phone connected**.",
+              "Point the phone at a part's barcode. The phone beeps and the part is added to the bill on the PC. Scan the same part again to add one more.",
+              "When you are done, click **Phone scanner** on the PC and then **Stop phone scanner**.",
+            ],
+          },
+          {
+            type: "list",
+            items: [
+              "The phone needs internet, but it doesn't have to be on the shop's Wi-Fi, and nobody has to log in on it.",
+              "The phone shows each scanned part with its price, or **No part has this barcode** when the code isn't in your items.",
+              "Parts scanned before the customer is attached are added as soon as you attach the customer.",
+              "Barcode won't read? Turn on the light (if your phone has one) or type the code in **Or type the barcode / part number** and tap **Add**.",
+            ],
+          },
+          {
+            type: "tip",
+            text: "The link works for 12 hours or until you stop it. Making a new QR code stops the old one, so each counter has one phone at a time.",
+          },
+        ],
+      },
+      {
         id: "close-shift",
         title: "Close the shift",
         blocks: [
