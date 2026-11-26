@@ -605,6 +605,7 @@ export const HELP: HelpSection[] = [
               "Pick **Today**, **Last 7 days**, **This month**, **Last month** or **This financial year**, or set your own dates (up to 366 days).",
               "Download with **CSV** or **Excel**.",
               "For GSTR-1, **Portal JSON** gives the file to upload on the GST portal. Check it with your accountant before filing.",
+              "For a quick look, the **GST on sales** card on the **Dashboard** shows the tax for the chosen period, after credit notes. Click **GSTR-3B** on it to open the full report for the same days.",
             ],
           },
         ],

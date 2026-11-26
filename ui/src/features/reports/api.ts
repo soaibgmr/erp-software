@@ -19,6 +19,8 @@ export interface DashboardSummary {
   scope: { branchIds: string[]; label: string };
   sales: { total: string; bills: number; average: string; previousTotal: string; changePercent: number | null };
   collected: { total: string; percentOfSales: number | null; byMode: { mode: PaymentMethod; amount: string }[] };
+  // GST on sales in the period, net of credit notes raised in it.
+  gst: { taxable: string; cgst: string; sgst: string; igst: string; total: string };
   receivables: { total: string; customers: number; overdue30: string; overdueCustomers: number };
 }
 
