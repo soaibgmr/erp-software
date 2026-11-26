@@ -116,9 +116,21 @@ function buildUrl(path: string, query?: Query) {
 
 let refreshing: Promise<boolean> | null = null;
 
-// One refresh at a time; concurrent 401s wait for the same rotation.
-function refreshSession(): Promise<boolean> {
-  refreshing ??= (async () => {
+// Runs fn while holding a lock shared by every tab of this site, so two tabs never send the same
+// refresh token (the API treats a reused refresh token as theft and signs the user out everywhere).
+function withRefreshLock<T>(fn: () => Promise<T>): Promise<T> {
+  if (typeof navigator !== "undefined" && navigator.locks?.request) {
+    return navigator.locks.request("erp-session-refresh", fn) as Promise<T>;
+  }
+  return fn();
+}
+
+// One refresh at a time; concurrent 401s wait for the same rotation. `usedToken` is the access
+// token the failed request carried: if storage already holds a newer one, another tab (or an
+// earlier refresh in this tab) rotated the session, and we just retry with it.
+function refreshSession(usedToken: string | null): Promise<boolean> {
+  refreshing ??= withRefreshLock(async () => {
+    if (session.token && session.token !== usedToken) return true;
     const refreshToken = session.refreshToken;
     if (!refreshToken) return false;
     try {
@@ -134,7 +146,7 @@ function refreshSession(): Promise<boolean> {
     } catch {
       return false;
     }
-  })().finally(() => {
+  }).finally(() => {
     refreshing = null;
   });
   return refreshing;
@@ -151,11 +163,14 @@ async function raw(
   const separate = opts.bearer !== undefined;
   const useAuth = opts.auth !== false && !separate;
   if (separate && opts.bearer) headers.authorization = `Bearer ${opts.bearer}`;
-  if (useAuth && session.token) headers.authorization = `Bearer ${session.token}`;
+  const usedToken = useAuth ? session.token : null;
+  if (usedToken) headers.authorization = `Bearer ${usedToken}`;
   if (!separate && session.branchId) headers["x-branch-id"] = session.branchId;
 
   let res: Response;
   try {
+    // res.ok is checked below, after the 401 refresh.
+    // react-doctor-disable-next-line react-doctor/no-fetch-response-used-without-status-check
     res = await fetch(buildUrl(path, opts.query), {
       method,
       headers,
@@ -168,7 +183,7 @@ async function raw(
   }
 
   if (res.status === 401 && useAuth && !retried && session.refreshToken) {
-    if (await refreshSession()) return raw(method, path, opts, true);
+    if (await refreshSession(usedToken)) return raw(method, path, opts, true);
     session.set(null);
     onSessionExpired();
   }
@@ -193,7 +208,8 @@ async function raw(
 // Errors still come back as the JSON envelope and are thrown as ApiError.
 async function download(path: string, query?: Query, retried = false): Promise<string> {
   const headers: Record<string, string> = { clientid: CLIENT_ID };
-  if (session.token) headers.authorization = `Bearer ${session.token}`;
+  const usedToken = session.token;
+  if (usedToken) headers.authorization = `Bearer ${usedToken}`;
   if (session.branchId) headers["x-branch-id"] = session.branchId;
   let res: Response;
   try {
@@ -202,7 +218,7 @@ async function download(path: string, query?: Query, retried = false): Promise<s
     throw new ApiError(0, "NETWORK", "The server didn't respond. Check the connection and try again.");
   }
   if (res.status === 401 && !retried && session.refreshToken) {
-    if (await refreshSession()) return download(path, query, true);
+    if (await refreshSession(usedToken)) return download(path, query, true);
     session.set(null);
     onSessionExpired();
   }

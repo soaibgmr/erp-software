@@ -150,6 +150,8 @@ export interface PricedCartResult {
   customer: CustomerCredit | null;
   placeOfSupply: string;
   supplyType: SupplyType;
+  // GSTIN printed on the bill: the branch's own, else the business's. Null = can't bill yet.
+  sellerGstin: string | null;
 }
 
 // ---------- Invoices ----------

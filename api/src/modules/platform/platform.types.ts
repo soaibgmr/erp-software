@@ -14,6 +14,14 @@ export interface PlatformAdminDto {
   id: string;
   name: string;
   email: string;
+  lastLoginAt: Date | null;
+  passwordChangedAt: Date | null;
+}
+
+// Counts for the console's overview cards and nav badges.
+export interface PlatformSummaryDto {
+  shops: Record<BusinessStatus, number>;
+  openDemoRequests: number;
 }
 
 export interface PlatformLoginResponseDto {

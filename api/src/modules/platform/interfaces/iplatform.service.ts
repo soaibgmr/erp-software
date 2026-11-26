@@ -8,12 +8,21 @@ import type {
   PlatformAdminDto,
   PlatformBusinessDto,
   PlatformLoginResponseDto,
+  PlatformSummaryDto,
   UpdateBusinessStatusDto,
 } from "../platform.types";
 
 export interface IPlatformService {
   login(email: string, password: string, ip?: string): Promise<PlatformLoginResponseDto>;
   me(admin: PlatformAdminContext): Promise<PlatformAdminDto>;
+  // Checks the current password, saves the new one and signs out every other device.
+  // Returns a fresh token so the device that changed it stays signed in.
+  changePassword(
+    admin: PlatformAdminContext,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<PlatformLoginResponseDto>;
+  summary(): Promise<PlatformSummaryDto>;
   listBusinesses(query: ListBusinessesQuery): Promise<Paginated<PlatformBusinessDto>>;
   // Approve (ACTIVE), reject or suspend a shop; emails the owner.
   updateStatus(admin: PlatformAdminContext, id: string, input: UpdateBusinessStatusDto): Promise<PlatformBusinessDto>;

@@ -275,12 +275,17 @@ export class ItemRepository implements IItemRepository {
     return db ? work(db) : this.prisma.$transaction((tx) => work(tx));
   }
 
+  // Barcodes are unique per business (item_barcodes_business_id_code_key), so a deleted
+  // item gives its barcodes up for reuse.
   async softDelete(businessId: string, id: string): Promise<boolean> {
-    const { count } = await this.prisma.item.updateMany({
-      where: { id, businessId, deletedAt: null },
-      data: { deletedAt: new Date() },
+    return this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.item.updateMany({
+        where: { id, businessId, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
+      if (count > 0) await tx.itemBarcode.deleteMany({ where: { itemId: id, businessId } });
+      return count > 0;
     });
-    return count > 0;
   }
 
   async hasStock(id: string): Promise<boolean> {
@@ -297,7 +302,8 @@ export class ItemRepository implements IItemRepository {
   async findBySkus(businessId: string, skus: string[]) {
     if (!skus.length) return [];
     return this.prisma.item.findMany({
-      where: { businessId, deletedAt: null, sku: { in: skus } },
+      // Case-insensitive, like findSkuOwner and the items_business_id_sku_active_key index.
+      where: { businessId, deletedAt: null, sku: { in: skus, mode: "insensitive" } },
       select: { id: true, sku: true, name: true, purchasePrice: true },
     });
   }

@@ -18,7 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { Logo } from "@/app/AppShell";
-import { buttonClasses } from "@/components/ui/Button";
+import { buttonClasses } from "@/components/ui/button-classes";
 import { Kbd } from "@/components/ui/Kbd";
 import { APP_NAME, CONTACT_EMAIL } from "@/lib/brand";
 import { cn } from "@/lib/utils";

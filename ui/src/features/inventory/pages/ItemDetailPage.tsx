@@ -4,7 +4,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate, useParams } from "react-router";
 import { History, Pencil, Printer, SlidersHorizontal } from "lucide-react";
 import type { z } from "zod";
-import { formatINR, formatQty, ITEM_UNIT_LABELS, STOCK_MOVEMENT_LABELS, stockSettingsSchema } from "@erp-software/shared";
+import {
+  formatINR,
+  formatQty,
+  ITEM_UNIT_LABELS,
+  STOCK_MOVEMENT_LABELS,
+  stockSettingsSchema,
+} from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -19,7 +25,8 @@ import { useToast } from "@/components/ui/Toast";
 import type { ItemDetail, ItemStock, LedgerEntry } from "@/lib/types";
 import { applyServerErrors, errorMessage, formatDateTime } from "@/lib/utils";
 import { useDeleteItem, useItem, useLedger, useUpdateStockSettings } from "../api";
-import { qtyWithUnit, SignedQty, StockBadge } from "../components/common";
+import { SignedQty, StockBadge } from "../components/common";
+import { qtyWithUnit } from "../components/format";
 
 const refLink = (e: LedgerEntry) => {
   if (!e.refNo) return <span className="text-muted">—</span>;

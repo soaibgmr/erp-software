@@ -10,6 +10,7 @@ import type {
   OwnerContact,
   PlatformAdminDto,
   PlatformBusinessDto,
+  PlatformSummaryDto,
 } from "./platform.types";
 
 const ownerWhere = { deletedAt: null, role: { key: "OWNER" } } satisfies Prisma.UserWhereInput;
@@ -76,6 +77,14 @@ const toDto = (r: BusinessRow): PlatformBusinessDto => {
   };
 };
 
+const adminSelect = {
+  id: true,
+  name: true,
+  email: true,
+  lastLoginAt: true,
+  passwordChangedAt: true,
+} satisfies Prisma.PlatformAdminSelect;
+
 @injectable()
 export class PlatformRepository implements IPlatformRepository {
   constructor(@inject(TYPES.PrismaClient) private readonly prisma: PrismaClient) {}
@@ -83,16 +92,30 @@ export class PlatformRepository implements IPlatformRepository {
   findAdminCredentials(email: string) {
     return this.prisma.platformAdmin.findUnique({
       where: { email },
-      select: { id: true, name: true, email: true, passwordHash: true },
+      select: { ...adminSelect, passwordHash: true },
     });
   }
 
   findAdmin(id: string): Promise<PlatformAdminDto | null> {
-    return this.prisma.platformAdmin.findUnique({ where: { id }, select: { id: true, name: true, email: true } });
+    return this.prisma.platformAdmin.findUnique({ where: { id }, select: adminSelect });
   }
 
   async touchAdminLogin(id: string): Promise<void> {
     await this.prisma.platformAdmin.update({ where: { id }, data: { lastLoginAt: new Date() } });
+  }
+
+  async setAdminPassword(id: string, passwordHash: string, changedAt: Date): Promise<void> {
+    await this.prisma.platformAdmin.update({ where: { id }, data: { passwordHash, passwordChangedAt: changedAt } });
+  }
+
+  async summary(): Promise<PlatformSummaryDto> {
+    const [groups, openDemoRequests] = await Promise.all([
+      this.prisma.business.groupBy({ by: ["status"], _count: { _all: true } }),
+      this.prisma.demoRequest.count({ where: { handledAt: null } }),
+    ]);
+    const shops: PlatformSummaryDto["shops"] = { PENDING: 0, ACTIVE: 0, SUSPENDED: 0, REJECTED: 0 };
+    for (const g of groups) shops[g.status] = g._count._all;
+    return { shops, openDemoRequests };
   }
 
   async listBusinesses({ page, limit, status, search }: ListBusinessesQuery): Promise<Paginated<PlatformBusinessDto>> {

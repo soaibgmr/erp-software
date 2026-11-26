@@ -13,7 +13,8 @@ import { NotFoundPage } from "@/features/home/ComingSoonPage";
 import { errorMessage } from "@/lib/utils";
 import { downloadReport, useReport, type BranchScopeOption, type ReportParams } from "./api";
 import { monthStart, PERIOD_PRESETS, today } from "./dates";
-import { formatCell, ReportTableView } from "./ReportTable";
+import { ReportTableView } from "./ReportTable";
+import { formatCell } from "./format-cell";
 
 // One page renders every report: filters live in the URL so a report link can be shared or bookmarked.
 export function ReportViewerPage() {

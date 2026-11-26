@@ -5,12 +5,10 @@
   "installCommand": "cd .. && npm ci --include=dev",
   "buildCommand": "cd .. && npm run build:shared && npm run build -w @erp-software/api && npm run bundle -w @erp-software/api",
   "outputDirectory": "public",
-  "regions": [
-    "bom1"
-  ],
+  "regions": ["bom1"],
   "functions": {
     "api/index.js": {
-      "maxDuration": 60,
+      "maxDuration": 300,
       "includeFiles": "{dist/bundle,certs}/**"
     }
   },

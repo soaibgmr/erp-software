@@ -150,6 +150,12 @@ export const platformLoginSchema = z.strictObject({
   email,
   password: z.string().min(1, "Enter your password").max(72),
 });
+export const platformChangePasswordSchema = z.strictObject({
+  currentPassword: z.string().min(1, "Enter your current password").max(72),
+  newPassword: passwordSchema,
+});
+export type PlatformChangePassword = z.output<typeof platformChangePasswordSchema>;
+
 export const businessStatusUpdateSchema = z.strictObject({
   status: z.enum(["ACTIVE", "SUSPENDED", "REJECTED"]),
   note: optionalText(300),
@@ -170,12 +176,21 @@ export type DemoRequest = z.output<typeof demoRequestSchema>;
 // ---- Number series ----
 export const documentTypeSchema = z.enum(DOCUMENT_TYPES);
 
-export const documentSequenceUpdateSchema = z.strictObject({
-  prefix: z
-    .string()
-    .trim()
-    .toUpperCase()
-    .regex(/^[A-Z]{1,6}$/, "1–6 letters"),
-  padding: z.coerce.number().int().min(3).max(8),
-});
+// GST limit on invoice (and credit note) numbers.
+export const MAX_DOCUMENT_NUMBER_LENGTH = 16;
+
+export const documentSequenceUpdateSchema = z
+  .strictObject({
+    prefix: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .regex(/^[A-Z]{1,6}$/, "1–6 letters"),
+    padding: z.coerce.number().int().min(3).max(8),
+  })
+  // GST allows invoice numbers of at most 16 characters: PREFIX-YY-0001 is prefix + 4 + padding.
+  .refine((v) => v.prefix.length + 4 + v.padding <= MAX_DOCUMENT_NUMBER_LENGTH, {
+    path: ["padding"],
+    message: `The number would be longer than ${MAX_DOCUMENT_NUMBER_LENGTH} characters; use fewer letters or digits`,
+  });
 export type DocumentSequenceUpdate = z.output<typeof documentSequenceUpdateSchema>;

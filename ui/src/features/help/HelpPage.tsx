@@ -15,6 +15,8 @@ export function HelpPage() {
     if (!q) return HELP;
     return HELP.map((s) => ({
       ...s,
+      // String search, not an array lookup.
+      // react-doctor-disable-next-line react-doctor/js-set-map-lookups
       articles: s.articles.filter((a) => articleText(s, a).includes(q)),
     })).filter((s) => s.articles.length > 0);
   }, [q]);
@@ -93,6 +95,7 @@ export function HelpPage() {
                     </div>
                     <div className="mt-3 space-y-3">
                       {a.blocks.map((b, i) => (
+                        // react-doctor-disable-next-line react-doctor/no-array-index-as-key
                         <Block key={i} block={b} />
                       ))}
                     </div>
@@ -119,6 +122,7 @@ function Block({ block }: { block: HelpBlock }) {
       return (
         <ol className="space-y-2">
           {block.items.map((item, i) => (
+            // react-doctor-disable-next-line react-doctor/no-array-index-as-key
             <li key={i} className="flex gap-3 text-body text-ink">
               <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-navy-50 text-overline font-semibold text-navy-700">
                 {i + 1}
@@ -134,6 +138,7 @@ function Block({ block }: { block: HelpBlock }) {
       return (
         <ul className="list-disc space-y-1.5 pl-5 text-body text-ink marker:text-muted">
           {block.items.map((item, i) => (
+            // react-doctor-disable-next-line react-doctor/no-array-index-as-key
             <li key={i}>
               <Rich text={item} />
             </li>
@@ -174,6 +179,7 @@ function Block({ block }: { block: HelpBlock }) {
             </thead>
             <tbody className="divide-y divide-border">
               {block.rows.map((row, i) => (
+                // react-doctor-disable-next-line react-doctor/no-array-index-as-key
                 <tr key={i}>
                   {row.map((cell, j) => (
                     <td key={j} className={j === 0 ? "px-3 py-2 align-top font-medium whitespace-nowrap" : "px-3 py-2"}>
@@ -195,7 +201,9 @@ function Rich({ text }: { text: string }) {
   return (
     <>
       {parts.map((p, i): ReactNode => {
+        // react-doctor-disable-next-line react-doctor/no-array-index-as-key
         if (p.startsWith("**") && p.endsWith("**")) return <strong key={i}>{p.slice(2, -2)}</strong>;
+        // react-doctor-disable-next-line react-doctor/no-array-index-as-key
         if (p.startsWith("`") && p.endsWith("`")) return <Kbd key={i}>{p.slice(1, -1)}</Kbd>;
         return <Fragment key={i}>{p}</Fragment>;
       })}

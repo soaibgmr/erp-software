@@ -89,6 +89,8 @@ export function usePhoneScanner(branchId: string | null) {
   }, [session]);
 
   const sessionId = session?.id ?? null;
+  // The poll timer is cleared in this effect's cleanup (clearTimeout(timer)).
+  // react-doctor-disable-next-line react-doctor/effect-needs-cleanup
   useEffect(() => {
     if (!sessionId) return;
     let stopped = false;

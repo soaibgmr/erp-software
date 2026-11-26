@@ -13,7 +13,8 @@ import { cn, errorMessage, formatDate, formatDateTime } from "@/lib/utils";
 import { useSettings } from "@/features/settings/api";
 import { useInvoice } from "../api";
 import { CancelInvoiceDialog } from "../components/CancelInvoiceDialog";
-import { InvoiceStatusBadge, printMenuItems } from "../components/common";
+import { InvoiceStatusBadge } from "../components/common";
+import { printMenuItems } from "../components/print-actions";
 import { CollectPaymentDialog, ReversePaymentDialog } from "../components/PaymentDialogs";
 
 const money = (v: string | number) => formatINR(v, { exact: true });

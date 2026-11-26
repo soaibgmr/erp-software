@@ -227,6 +227,9 @@ export async function buildInvoicePdf(input: InvoicePdfInput): Promise<Uint8Arra
     color: SLATE,
     right: M + W,
   });
+  w.y -= 11;
+  // CGST Rule 46(p): say whether tax is payable on reverse charge.
+  w.text("Tax payable on reverse charge: No", 0, 8.5, { color: SLATE, right: M + W });
   w.y = Math.min(billBottom, w.y - 12) - 8;
 
   // ---- Items table ----

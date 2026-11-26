@@ -46,7 +46,13 @@ const scanHeaders = (token: string) => ({ "x-scan-token": token });
 
 export function PhoneScanPage() {
   const { sessionId = "" } = useParams();
-  const [token] = useState(() => decodeURIComponent(window.location.hash.slice(1)));
+  const [token] = useState(() => {
+    try {
+      return decodeURIComponent(window.location.hash.slice(1));
+    } catch {
+      return ""; // A malformed link shows the "incomplete" message below.
+    }
+  });
   const [phase, setPhase] = useState<Phase>(() =>
     token
       ? { kind: "connecting" }
@@ -255,6 +261,8 @@ function Camera({ onCode, onRetry }: { onCode: (code: string) => void; onRetry: 
   });
   const last = useRef<{ code: string; at: number } | null>(null);
 
+  // The decode loop's timer is cleared by stopDecoder() in this effect's cleanup.
+  // react-doctor-disable-next-line react-doctor/effect-needs-cleanup
   useEffect(() => {
     const el = video.current;
     if (!el || !cameraAvailable()) return;

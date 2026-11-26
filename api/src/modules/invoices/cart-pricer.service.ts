@@ -4,6 +4,7 @@ import { TYPES } from "../../config/ioc.types";
 import { hasPermission, type AuthContext } from "../../common/auth-context";
 import { fieldErrors, notFound } from "../../common/http-error";
 import type { IBranchRepository } from "../branches/interfaces/ibranch.repository";
+import type { IBusinessRepository } from "../business/interfaces/ibusiness.repository";
 import type { ICustomerRepository } from "../customers/interfaces/icustomer.repository";
 import type { ISettingsService } from "../settings/interfaces/isettings.service";
 import type { IInvoiceRepository } from "./interfaces/iinvoice.repository";
@@ -19,6 +20,7 @@ export class CartPricer implements ICartPricer {
     @inject(TYPES.CustomerRepository) private readonly customers: ICustomerRepository,
     @inject(TYPES.BranchRepository) private readonly branches: IBranchRepository,
     @inject(TYPES.SettingsService) private readonly settings: ISettingsService,
+    @inject(TYPES.BusinessRepository) private readonly business: IBusinessRepository,
   ) {}
 
   async customerCredit(auth: AuthContext, customerId: string): Promise<CustomerCredit> {
@@ -50,10 +52,11 @@ export class CartPricer implements ICartPricer {
 
     const itemIds = input.lines.flatMap((l) => (l.kind === "ITEM" ? [l.itemId] : []));
     const labourIds = input.lines.flatMap((l) => (l.kind === "LABOUR" ? [l.labourServiceId] : []));
-    const [items, labour, pos] = await Promise.all([
+    const [items, labour, pos, sellerGstin] = await Promise.all([
       this.invoices.findSaleItems(auth.businessId, itemIds, branchId),
       this.invoices.findSaleLabour(auth.businessId, labourIds),
       this.settings.get(auth.businessId, "pos"),
+      branch.gstin ?? this.business.get(auth.businessId).then((b) => b?.gstin ?? null),
     ]);
     const itemById = new Map(items.map((i) => [i.id, i]));
     const labourById = new Map(labour.map((l) => [l.id, l]));
@@ -199,6 +202,7 @@ export class CartPricer implements ICartPricer {
       customer,
       placeOfSupply,
       supplyType,
+      sellerGstin,
     };
   }
 }

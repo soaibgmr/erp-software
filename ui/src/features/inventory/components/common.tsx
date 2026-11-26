@@ -1,37 +1,15 @@
 import { NavLink } from "react-router";
-import {
-  formatQty,
-  STOCK_STATUS_LABELS,
-  type StockAdjustmentStatus,
-  type StockStatus,
-  type StockTransferStatus,
-} from "@erp-software/shared";
+import { formatQty, STOCK_STATUS_LABELS, type StockStatus } from "@erp-software/shared";
 import type { Permission } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Badge, type Tone } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
 
-export const stockTone: Record<StockStatus, Tone> = { IN_STOCK: "success", LOW: "warning", OUT: "danger" };
+const stockTone: Record<StockStatus, Tone> = { IN_STOCK: "success", LOW: "warning", OUT: "danger" };
 
 export function StockBadge({ status }: { status: StockStatus }) {
   return <Badge tone={stockTone[status]}>{STOCK_STATUS_LABELS[status]}</Badge>;
 }
-
-export const adjustmentStatusBadge: Record<StockAdjustmentStatus, { tone: Tone; label: string }> = {
-  PENDING: { tone: "warning", label: "Awaiting approval" },
-  POSTED: { tone: "success", label: "Posted" },
-  REJECTED: { tone: "neutral", label: "Rejected" },
-};
-
-export const transferStatusBadge: Record<StockTransferStatus, { tone: Tone; label: string }> = {
-  IN_TRANSIT: { tone: "info", label: "In transit" },
-  RECEIVED: { tone: "success", label: "Received" },
-  CANCELLED: { tone: "neutral", label: "Cancelled" },
-};
-
-// "12 PCS", "1.5 LTR"; the unit is dropped for pieces.
-export const qtyWithUnit = (q: string | number, unit: string) =>
-  unit === "PCS" ? formatQty(q) : `${formatQty(q)} ${unit}`;
 
 // Signed quantity for ledgers and adjustments: "+5", "−2".
 export function SignedQty({ value }: { value: string | number }) {
@@ -44,7 +22,7 @@ export function SignedQty({ value }: { value: string | number }) {
   );
 }
 
-export const INVENTORY_TABS: { to: string; label: string; permissions: Permission[]; end?: boolean }[] = [
+const INVENTORY_TABS: { to: string; label: string; permissions: Permission[]; end?: boolean }[] = [
   { to: "/inventory", label: "Stock", permissions: ["inventory.view", "inventory.manage"], end: true },
   { to: "/inventory/adjustments", label: "Adjustments", permissions: ["inventory.view", "inventory.manage"] },
   { to: "/inventory/transfers", label: "Transfers", permissions: ["inventory.view", "inventory.manage"] },

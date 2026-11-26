@@ -30,7 +30,7 @@ export function StockPage() {
   const brandId = params.get("brandId") ?? undefined;
   const status = (params.get("status") as StockStatus | null) ?? undefined;
   const allBranches = params.get("branch") === "all";
-  const [search, setSearch] = useState(params.get("search") ?? "");
+  const [search, setSearch] = useState(() => params.get("search") ?? "");
   const debounced = useDebounced(search.trim());
 
   // Search lives in the URL so the command palette can deep-link and back/forward works.

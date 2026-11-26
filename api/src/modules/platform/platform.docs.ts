@@ -2,6 +2,7 @@ import {
   BUSINESS_STATUSES,
   businessStatusUpdateSchema,
   demoRequestSchema,
+  platformChangePasswordSchema,
   platformLoginSchema,
 } from "@erp-software/shared";
 import {
@@ -32,7 +33,23 @@ export const platformSchemas: Record<string, SchemaObject> = {
   },
   PlatformAdmin: {
     type: "object",
-    properties: { id: { type: "string", format: "uuid" }, name: { type: "string" }, email: { type: "string" } },
+    properties: {
+      id: { type: "string", format: "uuid" },
+      name: { type: "string" },
+      email: { type: "string" },
+      lastLoginAt: { type: ["string", "null"], format: "date-time" },
+      passwordChangedAt: { type: ["string", "null"], format: "date-time" },
+    },
+  },
+  PlatformSummary: {
+    type: "object",
+    properties: {
+      shops: {
+        type: "object",
+        properties: Object.fromEntries(BUSINESS_STATUSES.map((st) => [st, { type: "integer" }])),
+      },
+      openDemoRequests: { type: "integer" },
+    },
   },
   PlatformBusiness: {
     type: "object",
@@ -82,6 +99,28 @@ export const platformPaths: Paths = {
       summary: "Current platform admin",
       description: note,
       responses: { 200: success("Admin", ref("PlatformAdmin")) },
+    }),
+  },
+  "/api/v1/platform/me/password": {
+    patch: operation({
+      tag,
+      summary: "Change the platform admin's password",
+      description: `${note} Checks the current password (locked for 15 minutes after 8 wrong tries). Every token issued before the change stops working; the response carries a new token for this device.`,
+      body: fromZod(platformChangePasswordSchema),
+      responses: {
+        200: success("Password changed", {
+          type: "object",
+          properties: { admin: ref("PlatformAdmin"), token: { type: "string" } },
+        }),
+      },
+    }),
+  },
+  "/api/v1/platform/summary": {
+    get: operation({
+      tag,
+      summary: "Shop counts by status and open demo requests",
+      description: note,
+      responses: { 200: success("Summary", ref("PlatformSummary")) },
     }),
   },
   "/api/v1/platform/businesses": {

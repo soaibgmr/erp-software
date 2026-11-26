@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router";
 import { Plus, Search, Users } from "lucide-react";
 import { CUSTOMER_TYPE_LABELS, CUSTOMER_TYPES, formatINR, formatMobile, type CustomerType } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
-import { Badge, type Tone } from "@/components/ui/Badge";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/Controls";
@@ -14,8 +14,7 @@ import { useDebounced } from "@/lib/hooks";
 import type { Customer } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { useCustomers } from "./api";
-
-export const customerTypeTone: Record<CustomerType, Tone> = { RETAIL: "neutral", FLEET: "info", B2B: "highlight" };
+import { customerTypeTone } from "./tones";
 
 export function CustomersPage() {
   const navigate = useNavigate();
@@ -23,7 +22,7 @@ export function CustomersPage() {
   const [params, setParams] = useSearchParams();
   const page = Number(params.get("page") ?? 1);
   const type = (params.get("type") as CustomerType | null) ?? undefined;
-  const [search, setSearch] = useState(params.get("search") ?? "");
+  const [search, setSearch] = useState(() => params.get("search") ?? "");
   const debounced = useDebounced(search.trim());
 
   // Keep the search in the URL so the command palette can deep-link and back/forward works.

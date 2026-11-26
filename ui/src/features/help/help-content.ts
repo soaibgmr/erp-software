@@ -43,7 +43,7 @@ export const HELP: HelpSection[] = [
             type: "steps",
             items: [
               "Open the sign-up page and click **Register your business**.",
-              "Under **Your business**, enter the **Business name**, **City** and **State**. **GSTIN** is optional; a valid GSTIN fills the state for you.",
+              "Under **Your business**, enter the **Business name**, **City** and **State**. **GSTIN** is optional here (a valid GSTIN fills the state for you), but you need it before you can save bills.",
               "Under **Owner login**, enter your name, **Mobile number**, **Email** and a **Password** of at least 8 characters.",
               "Click **Register business**.",
               "Open the email we send you and click the link to confirm your email address.",
@@ -63,7 +63,7 @@ export const HELP: HelpSection[] = [
           {
             type: "steps",
             items: [
-              "**Settings → Business profile**: legal name, GSTIN, state, address, and your bank and UPI details (they print on A4 bills).",
+              "**Settings → Business profile**: legal name, GSTIN, state, address, and your bank and UPI details (they print on A4 bills). Bills can't be saved until the GSTIN is set.",
               "**Settings → Branches**: check your main branch, and add any other branches with their own code (for example KOC).",
               "**Settings → Billing & tax**: choose the bill paper size, the default payment mode, the maximum discount without approval and whether to print right after charging.",
               "**Settings → Users**: add your staff with their mobile number, a temporary password, a role and their branches.",

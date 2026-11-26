@@ -1,38 +1,8 @@
-import {
-  formatINR,
-  formatQty,
-  type ReportCell,
-  type ReportColumn,
-  type ReportTable as Table,
-} from "@erp-software/shared";
-import { cn, formatDate, formatDateTime } from "@/lib/utils";
+import { type ReportCell, type ReportColumn, type ReportTable as Table } from "@erp-software/shared";
+import { cn } from "@/lib/utils";
+import { formatCell } from "./format-cell";
 
 const NUMERIC = new Set(["money", "qty", "int", "percent"]);
-
-// "2026-11-20" → "20 Nov 2026" without a timezone shift.
-const dayFmt = new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
-
-export function formatCell(col: ReportColumn, v: ReportCell): string {
-  if (v === null || v === undefined || v === "") return "—";
-  switch (col.type) {
-    case "money":
-      return formatINR(v, { exact: true });
-    case "qty":
-      return formatQty(v);
-    case "percent":
-      return `${Number(v)}%`;
-    case "int":
-      return String(v);
-    case "date":
-      return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)
-        ? dayFmt.format(new Date(`${v}T00:00:00Z`))
-        : formatDate(String(v));
-    case "datetime":
-      return formatDateTime(String(v));
-    default:
-      return String(v);
-  }
-}
 
 const STATUS_LABELS: Record<string, string> = {
   PAID: "Paid",
@@ -65,6 +35,8 @@ export function ReportTableView({ table }: { table: Table }) {
         </thead>
         <tbody>
           {table.rows.map((row, i) => (
+            // Report rows are read-only and never reordered on screen; many have no unique column.
+            // react-doctor-disable-next-line react-doctor/no-array-index-as-key
             <tr key={i} className={cn("border-b border-border", row.status === "CANCELLED" && "text-muted")}>
               {table.columns.map((c) => (
                 <td

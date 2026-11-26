@@ -216,6 +216,7 @@ function NewRoleForm({ onClose, onCreated }: { onClose: () => void; onCreated: (
 
   const submit = async (e?: React.FormEvent) => {
     e?.preventDefault();
+    if (save.isPending) return;
     try {
       const role = await save.mutateAsync({ body: { name, description, permissions: [] } });
       toast({ message: `${role.name} created. Choose its permissions.` });

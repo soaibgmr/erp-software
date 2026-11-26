@@ -583,6 +583,14 @@ export interface PlatformAdmin {
   id: string;
   name: string;
   email: string;
+  lastLoginAt: string | null;
+  passwordChangedAt: string | null;
+}
+
+// Counts for the admin console's overview cards and nav badges.
+export interface PlatformSummary {
+  shops: Record<BusinessStatus, number>;
+  openDemoRequests: number;
 }
 
 // "Book a quick demo" request from the landing page (platform admin console).

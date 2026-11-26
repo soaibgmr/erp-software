@@ -112,7 +112,7 @@ const customer: CustomerCredit = {
 
 function priced(
   totalPaise: number,
-  opts: { needsDiscountApproval?: boolean; customer?: CustomerCredit | null } = {},
+  opts: { needsDiscountApproval?: boolean; customer?: CustomerCredit | null; sellerGstin?: string | null } = {},
 ): PricedCartResult {
   return {
     quote: {
@@ -176,6 +176,7 @@ function priced(
     customer: opts.customer === undefined ? customer : opts.customer,
     placeOfSupply: "32",
     supplyType: "INTRA_STATE",
+    sellerGstin: opts.sellerGstin === undefined ? "32AAACA1234A1Z5" : opts.sellerGstin,
   };
 }
 
@@ -273,6 +274,13 @@ describe("InvoicePostingService", () => {
       dueDate: null,
     });
     expect(moves[0]).toEqual([expect.objectContaining({ type: "SALE", quantity: -2, refNo: "INV-26-00001" })]);
+  });
+
+  it("refuses to bill until the shop has a GSTIN", async () => {
+    const { svc, created } = posting({ price: priced(118_000, { sellerGstin: null }) });
+    const err = await expectHttp(svc.charge(counter, ids.branchA, { lines: [item], payments: cash(1180) }), 422);
+    expect(err.code).toBe("GSTIN_REQUIRED");
+    expect(created).toHaveLength(0);
   });
 
   it("refuses a bill without a customer (no walk-in billing)", async () => {

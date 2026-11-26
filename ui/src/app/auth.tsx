@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Permission } from "@erp-software/shared";
 import { api, session, setBusinessBlockedHandler, setSessionExpiredHandler } from "@/lib/api-client";
 import type { Me } from "@/lib/types";
+import { meKey } from "./auth-keys";
 
 interface AuthState {
   me: Me | undefined;
@@ -26,8 +27,6 @@ export function useAuth() {
   if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
   return ctx;
 }
-
-export const meKey = ["me"] as const;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
@@ -97,9 +96,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         { auth: false },
       );
       setNotice(null);
+      // Nothing cached for a previous user (maybe of another shop) may show for this one.
+      // resetQueries (not clear) keeps the mounted /users/me observer, so it refetches with the new token.
+      queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== meKey[0] });
       session.set(res);
       setHasToken(true);
-      await queryClient.invalidateQueries({ queryKey: meKey });
+      await queryClient.resetQueries({ queryKey: meKey });
     },
     [queryClient],
   );
@@ -110,17 +112,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOutLocally();
   }, [signOutLocally]);
 
+  const granted = useMemo(() => new Set(me?.permissions ?? []), [me]);
   const can = useCallback(
-    (...permissions: Permission[]) =>
-      Boolean(me && (me.isOwner || permissions.some((p) => me.permissions.includes(p)))),
-    [me],
+    (...permissions: Permission[]) => Boolean(me && (me.isOwner || permissions.some((p) => granted.has(p)))),
+    [me, granted],
   );
 
+  // Only a 401/403 on /users/me means signed out; any other failure (network, 5xx) keeps the
+  // session and RequireAuth shows the error with a retry-later / sign-out choice.
+  const meStatus = (meQuery.error as { status?: number } | null)?.status;
   const status: AuthState["status"] = !hasToken
     ? "signed-out"
     : me
       ? "signed-in"
-      : meQuery.isError
+      : meStatus === 401 || meStatus === 403
         ? "signed-out"
         : "loading";
 

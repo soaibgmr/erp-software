@@ -16,7 +16,8 @@ import { useToast } from "@/components/ui/Toast";
 import { useSettings } from "@/features/settings/api";
 import { errorMessage } from "@/lib/utils";
 import { useCreateAdjustment, useItem } from "../api";
-import { lineErrors, LineEditor, serverLineErrors, toSearchResult, type DraftLine } from "../components/LineEditor";
+import { LineEditor } from "../components/LineEditor";
+import { lineErrors, serverLineErrors, toSearchResult, type DraftLine } from "../components/line-utils";
 
 export function AdjustmentFormPage() {
   const navigate = useNavigate();
@@ -48,6 +49,7 @@ export function AdjustmentFormPage() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (create.isPending) return;
     const fields: Record<string, string> = {};
     if (!lines.length) fields.lines = "Add at least one item";
     if (reason === "OTHER" && !note.trim()) fields.note = "Explain the reason";

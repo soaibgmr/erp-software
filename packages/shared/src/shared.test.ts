@@ -6,6 +6,7 @@ import {
   customerCreateSchema,
   financialYearLabel,
   financialYearStart,
+  documentSequenceUpdateSchema,
   formatDocumentNumber,
   formatINR,
   formatMobile,
@@ -140,6 +141,10 @@ describe("registration numbers", () => {
 describe("document numbers", () => {
   it("formats the series", () => {
     expect(formatDocumentNumber("INV", 2026, 1874, 5)).toBe("INV-26-01874");
+  });
+  it("keeps a series within GST's 16 characters", () => {
+    expect(documentSequenceUpdateSchema.safeParse({ prefix: "INVOIC", padding: 6 }).success).toBe(true); // 16
+    expect(documentSequenceUpdateSchema.safeParse({ prefix: "INVOIC", padding: 8 }).success).toBe(false); // 18
   });
   it("switches financial year on 1 April IST", () => {
     expect(financialYearStart(new Date("2027-03-31T18:00:00Z"))).toBe(2026); // 31 Mar 23:30 IST

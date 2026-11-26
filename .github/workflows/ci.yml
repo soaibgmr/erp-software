@@ -53,7 +53,7 @@ jobs:
       - name: Apply migrations
         working-directory: api
         env:
-          APP_ENV: live
+          APP_ENV: ${{ github.ref == 'refs/heads/main' && 'live' || 'staging' }}
           NODE_ENV: production
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
         run: npx prisma migrate deploy
@@ -84,7 +84,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: npm install --global vercel@latest
+      - run: npm install --global vercel@65.14.0 # pinned: a new CLI release can't change deploys unannounced
       # Run from the repo root: the Vercel project's Root Directory (api/ or ui/) picks the app,
       # and Vercel builds it remotely with the settings in <app>/vercel.json, same as before.
       - name: Deploy ${{ matrix.app }} to production

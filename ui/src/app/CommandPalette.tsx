@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router";
 import { ArrowRight, FileText, Package, Search, Users } from "lucide-react";
 import { useAuth } from "./auth";
 import { ALL_NAV_ITEMS } from "./nav";
+import { trapTab } from "@/lib/focus-trap";
 import { cn } from "@/lib/utils";
 
 interface Command {
@@ -25,6 +26,7 @@ function Palette({ onClose }: { onClose: () => void }) {
   const [active, setActive] = useState(0);
   const navigate = useNavigate();
   const { can } = useAuth();
+  const panel = useRef<HTMLDivElement>(null);
 
   const commands = useMemo<Command[]>(() => {
     const q = query.trim().toLowerCase();
@@ -76,12 +78,21 @@ function Palette({ onClose }: { onClose: () => void }) {
       commands[active]?.run();
     } else if (e.key === "Escape") {
       onClose();
+    } else {
+      trapTab(e.nativeEvent, panel.current);
     }
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex justify-center bg-navy-900/40 px-4 pt-[12vh]" onMouseDown={onClose}>
+    <div
+      role="presentation"
+      className="fixed inset-0 z-50 flex justify-center bg-navy-900/40 px-4 pt-[12vh]"
+      onMouseDown={onClose}
+    >
+      {/* Focus stays in the search box (trapTab); a native <dialog> isn't needed for this overlay. */}
+      {/* react-doctor-disable-next-line react-doctor/prefer-html-dialog */}
       <div
+        ref={panel}
         role="dialog"
         aria-modal="true"
         aria-label="Command palette"
@@ -98,6 +109,8 @@ function Palette({ onClose }: { onClose: () => void }) {
               setActive(0);
             }}
             onKeyDown={onKeyDown}
+            aria-label="Search pages, invoices, customers and parts"
+            aria-activedescendant={commands[active] ? `palette-${commands[active].id}` : undefined}
             placeholder="Search pages, invoices, customers and parts…"
             className="h-14 flex-1 bg-transparent text-card text-ink placeholder:text-muted focus:outline-none"
             role="combobox"
@@ -109,24 +122,25 @@ function Palette({ onClose }: { onClose: () => void }) {
         <ul id="palette-list" role="listbox" className="max-h-[50vh] overflow-y-auto p-2">
           {commands.length === 0 && <li className="px-3 py-6 text-center text-body text-slate">No matches</li>}
           {commands.map((c, i) => (
-            <li key={c.id} role="option" aria-selected={i === active}>
-              <button
-                type="button"
-                onMouseEnter={() => setActive(i)}
-                onClick={c.run}
-                className={cn(
-                  "flex h-11 w-full items-center gap-3 rounded-menu px-3 text-left text-body",
-                  i === active ? "bg-navy-50 text-ink" : "text-ink",
-                )}
-              >
-                <c.icon className="size-[18px] text-slate" />
-                <span className="flex-1 truncate">{c.label}</span>
-                {i === active ? (
-                  <ArrowRight className="size-4 text-slate" />
-                ) : (
-                  c.hint && <span className="text-overline text-muted">{c.hint}</span>
-                )}
-              </button>
+            <li
+              key={c.id}
+              id={`palette-${c.id}`}
+              role="option"
+              aria-selected={i === active}
+              onMouseEnter={() => setActive(i)}
+              onClick={c.run}
+              className={cn(
+                "flex h-11 w-full cursor-pointer items-center gap-3 rounded-menu px-3 text-left text-body",
+                i === active ? "bg-navy-50 text-ink" : "text-ink",
+              )}
+            >
+              <c.icon className="size-[18px] text-slate" />
+              <span className="flex-1 truncate">{c.label}</span>
+              {i === active ? (
+                <ArrowRight className="size-4 text-slate" />
+              ) : (
+                c.hint && <span className="text-overline text-muted">{c.hint}</span>
+              )}
             </li>
           ))}
         </ul>

@@ -262,7 +262,7 @@ export class StockImportService implements IStockImportService {
           tx,
         );
       },
-      { timeoutMs: 120_000 },
+      { timeoutMs: 280_000 }, // below the 300 s Vercel maxDuration (api/vercel.json)
     );
     return { ...report, committed: true };
   }

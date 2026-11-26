@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Loader2, Search } from "lucide-react";
 import { formatINR } from "@erp-software/shared";
 import { Input } from "@/components/ui/Field";
@@ -6,14 +6,17 @@ import { useDebounced } from "@/lib/hooks";
 import type { ItemSearchResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useItemSearch } from "../api";
-import { qtyWithUnit, StockBadge } from "./common";
+import { StockBadge } from "./common";
+import { qtyWithUnit } from "./format";
+
+const NONE: string[] = [];
 
 // Search-as-you-type part picker (name, SKU, OEM number, brand or barcode).
 // Enter picks the highlighted row, so a barcode scanner that ends with Enter adds the exact match.
 export function ItemPicker({
   onSelect,
   placeholder = "Search parts by name, SKU, OEM no. or scan a barcode",
-  exclude = [],
+  exclude = NONE,
   autoFocus,
 }: {
   onSelect: (item: ItemSearchResult) => void;
@@ -28,7 +31,8 @@ export function ItemPicker({
   const query = useItemSearch(q);
   const listId = useId();
   const root = useRef<HTMLDivElement>(null);
-  const results = (query.data ?? []).filter((r) => !exclude.includes(r.id));
+  const excluded = useMemo(() => new Set(exclude), [exclude]);
+  const results = (query.data ?? []).filter((r) => !excluded.has(r.id));
 
   useEffect(() => {
     const onDown = (e: MouseEvent) => !root.current?.contains(e.target as Node) && setOpen(false);

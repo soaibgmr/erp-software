@@ -11,7 +11,8 @@ import { useToast } from "@/components/ui/Toast";
 import { useBranches } from "@/features/settings/api";
 import { errorMessage } from "@/lib/utils";
 import { useCreateTransfer } from "../api";
-import { lineErrors, LineEditor, serverLineErrors, type DraftLine } from "../components/LineEditor";
+import { LineEditor } from "../components/LineEditor";
+import { lineErrors, serverLineErrors, type DraftLine } from "../components/line-utils";
 
 export function TransferFormPage() {
   const navigate = useNavigate();
@@ -33,6 +34,7 @@ export function TransferFormPage() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (create.isPending) return;
     const fields: Record<string, string> = {};
     if (!toBranchId) fields.toBranchId = "Choose the receiving branch";
     if (!lines.length) fields.lines = "Add at least one item";

@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { businessStatusUpdateSchema, demoRequestSchema, platformLoginSchema } from "@erp-software/shared";
+import {
+  businessStatusUpdateSchema,
+  demoRequestSchema,
+  platformChangePasswordSchema,
+  platformLoginSchema,
+} from "@erp-software/shared";
 import { container } from "../../config/inversify.config";
 import { TYPES } from "../../config/ioc.types";
 import { idParamSchema } from "../../common/schemas";
@@ -42,6 +47,8 @@ platformRouter.post(
 platformRouter.use(requirePlatformAdmin);
 
 platformRouter.get("/me", controller.me);
+platformRouter.patch("/me/password", validate({ body: platformChangePasswordSchema }), controller.changePassword);
+platformRouter.get("/summary", controller.summary);
 platformRouter.get("/businesses", validate({ query: listBusinessesQuerySchema }), controller.listBusinesses);
 platformRouter.patch(
   "/businesses/:id/status",

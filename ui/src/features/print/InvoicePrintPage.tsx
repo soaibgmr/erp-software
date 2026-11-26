@@ -14,18 +14,8 @@ import { useInvoicePrint } from "@/features/invoices/api";
 import { useSettings } from "@/features/settings/api";
 import type { InvoicePrint } from "@/lib/types";
 import { cn, formatDate, formatDateTime } from "@/lib/utils";
-import {
-  BoxLabel,
-  DocumentFooter,
-  DocumentHeader,
-  joinAddress,
-  PrintShell,
-  sellerGstin,
-  SignatureRow,
-  isReceipt,
-  Watermark,
-  type PaperSize,
-} from "./PrintShell";
+import { BoxLabel, DocumentFooter, DocumentHeader, PrintShell, SignatureRow, Watermark } from "./PrintShell";
+import { joinAddress, sellerGstin, isReceipt, type PaperSize } from "./print-utils";
 
 const inr = (v: string | number) => formatINR(v, { exact: true });
 
@@ -108,6 +98,7 @@ function A4Invoice({ data, print }: { data: InvoicePrint; print: PrintSettings }
           {inv.dueDate && <Meta label="Due" value={formatDate(inv.dueDate)} />}
           <Meta label="Place of supply" value={`${inv.placeOfSupply} · ${stateName(inv.placeOfSupply) ?? ""}`} />
           <Meta label="Supply" value={igst ? "Inter-state (IGST)" : "Intra-state"} />
+          <Meta label="Reverse charge" value="No" />
         </div>
       </section>
 
