@@ -1,7 +1,8 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useEffectEvent, useId, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { Button } from "./Button";
+import { trapTab } from "@/lib/focus-trap";
 import { cn } from "@/lib/utils";
 
 interface ModalProps {
@@ -15,9 +16,11 @@ interface ModalProps {
 
 const widths = { sm: "max-w-[480px]", md: "max-w-[640px]", lg: "max-w-[880px]" };
 
-// 14px radius, Esc and backdrop close, focus moves into the dialog and returns on close.
+// 14px radius, Esc and backdrop close, focus moves into the dialog, stays there and returns on close.
 export function Modal({ open, onClose, title, children, footer, size = "sm" }: ModalProps) {
   const panel = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const close = useEffectEvent(() => onClose());
 
   useEffect(() => {
     if (!open) return;
@@ -27,7 +30,9 @@ export function Modal({ open, onClose, title, children, footer, size = "sm" }: M
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.stopPropagation();
-        onClose();
+        close();
+      } else {
+        trapTab(e, panel.current);
       }
     };
     document.addEventListener("keydown", onKey);
@@ -38,22 +43,27 @@ export function Modal({ open, onClose, title, children, footer, size = "sm" }: M
       document.body.style.overflow = overflow;
       previous?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-navy-900/40 p-4 sm:items-center">
       <div className="absolute inset-0" onClick={onClose} aria-hidden />
+      {/* A div with its own focus trap: native <dialog> would change how nested modals and the portal stack. */}
+      {/* react-doctor-disable-next-line react-doctor/prefer-html-dialog */}
       <div
         ref={panel}
         role="dialog"
         aria-modal="true"
+        aria-labelledby={titleId}
         tabIndex={-1}
         className={cn("relative my-8 w-full rounded-modal bg-surface shadow-modal focus:outline-none", widths[size])}
       >
         <div className="flex items-start justify-between gap-4 px-6 pt-5">
-          <h2 className="text-section font-semibold text-ink">{title}</h2>
+          <h2 id={titleId} className="text-section font-semibold text-ink">
+            {title}
+          </h2>
           <button
             data-close
             type="button"

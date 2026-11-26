@@ -17,7 +17,6 @@ import { CustomerFormPage } from "@/features/customers/CustomerFormPage";
 import { CustomerDetailPage } from "@/features/customers/CustomerDetailPage";
 import { ReportsPage } from "@/features/reports/ReportsPage";
 import { ReportViewerPage } from "@/features/reports/ReportViewerPage";
-import { ComponentGallery } from "@/features/dev/ComponentGallery";
 import { ComingSoonPage, NotFoundPage } from "@/features/home/ComingSoonPage";
 import { DashboardPage } from "@/features/home/DashboardPage";
 import { LandingPage } from "@/features/home/LandingPage";
@@ -64,14 +63,8 @@ function RequireAuth() {
   if (status === "signed-out" && location.pathname === "/") return <LandingPage />;
   if (status === "signed-out")
     return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
-  if (status === "loading") {
-    return (
-      <div className="flex min-h-screen items-center justify-center text-slate" role="status">
-        <Loader2 className="size-6 animate-spin" aria-label="Loading" />
-      </div>
-    );
-  }
-  if (error) {
+  // Only while the account hasn't loaded: a failed background refetch keeps the app usable.
+  if (status === "loading" && error) {
     return (
       <div className="mx-auto mt-24 max-w-md px-4">
         <ErrorBanner
@@ -83,6 +76,13 @@ function RequireAuth() {
             </Button>
           }
         />
+      </div>
+    );
+  }
+  if (status === "loading") {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-slate" role="status">
+        <Loader2 className="size-6 animate-spin" aria-label="Loading" />
       </div>
     );
   }
@@ -113,6 +113,16 @@ const comingSoon = ALL_NAV_ITEMS.filter((i) => i.phase).map((i) => ({
   path: `${i.to.slice(1)}/*`,
   element: <ComingSoonPage />,
 }));
+
+// The component gallery is a developer tool: only in `vite dev`, and left out of the production bundle.
+const devRoutes = import.meta.env.DEV
+  ? [
+      {
+        path: "dev/components",
+        lazy: async () => ({ Component: (await import("@/features/dev/ComponentGallery")).ComponentGallery }),
+      },
+    ]
+  : [];
 
 export const router = createBrowserRouter([
   // One error screen for every page: a crash while rendering shows it instead of the router's default.
@@ -291,7 +301,7 @@ export const router = createBrowserRouter([
               },
               { path: "profile", element: <ProfilePage /> },
               { path: "help", element: <HelpPage /> },
-              { path: "dev/components", element: <ComponentGallery /> },
+              ...devRoutes,
               ...comingSoon,
               { path: "*", element: <NotFoundPage /> },
             ],

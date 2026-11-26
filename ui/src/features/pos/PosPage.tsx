@@ -12,7 +12,7 @@ import { ConfirmDialog } from "@/components/ui/Modal";
 import { ErrorBanner, Skeleton } from "@/components/ui/States";
 import { useToast } from "@/components/ui/Toast";
 import { useCharge, useCurrentShift, useHeldCarts, useHoldCart, useQuote } from "@/features/invoices/api";
-import { useSettings } from "@/features/settings/api";
+import { useBranches, useBusiness, useSettings } from "@/features/settings/api";
 import { ApiError, api } from "@/lib/api-client";
 import { useDebounced } from "@/lib/hooks";
 import type { HeldCart, ItemSearchResult, Quote, ShiftReport } from "@/lib/types";
@@ -21,7 +21,8 @@ import { errorMessage } from "@/lib/utils";
 import { BillSavedDialog, type SavedBill } from "./BillSavedDialog";
 import { cartReducer, lineKey, loadCart, qtyOf, saveCart, toCartBody, type CartLine } from "./cart";
 import { CustomerStep } from "./CustomerStep";
-import { CartPanel, MODES, type PosMode } from "./CartPanel";
+import { CartPanel } from "./CartPanel";
+import { MODES, type PosMode } from "./modes";
 import {
   CloseShiftDialog,
   HeldCartsDialog,
@@ -33,14 +34,15 @@ import {
 } from "./Dialogs";
 import { usePhoneScanner, type PhoneScanner } from "./phone-scanner";
 import { PhoneScannerDialog } from "./PhoneScannerDialog";
-import { itemToLine, ProductPane } from "./ProductPane";
+import { ProductPane } from "./ProductPane";
+import { itemToLine } from "./item-to-line";
 import { ShortcutsDialog } from "./ShortcutsDialog";
 
 const timeFmt = new Intl.DateTimeFormat("en-IN", { hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" });
 
 // Full-screen POS (PRD M5): its own header, product grid on the left, cart and payment on the right.
 export function PosPage() {
-  const { branch } = useAuth();
+  const { branch, can } = useAuth();
   const navigate = useNavigate();
   const shift = useCurrentShift();
   const [heldOpen, setHeldOpen] = useState(false);
@@ -49,6 +51,11 @@ export function PosPage() {
   const [phoneOpen, setPhoneOpen] = useState(false);
   // A phone paired as a camera barcode scanner; its scans go into this branch's bill.
   const scanner = usePhoneScanner(branch?.id ?? null);
+  // A tax invoice needs the seller's GSTIN: the branch's own, else the business's.
+  const business = useBusiness().data;
+  const branches = useBranches(false).data;
+  const branchGstin = branches?.find((b) => b.id === branch?.id)?.gstin;
+  const gstinMissing = Boolean(business && branches && !branchGstin && !business.gstin);
 
   useHotkey("f1", () => setHelpOpen(true), { skipInDialogs: true });
 
@@ -64,6 +71,25 @@ export function PosPage() {
       />
       <ShortcutsDialog open={helpOpen} onClose={() => setHelpOpen(false)} />
       <PhoneScannerDialog open={phoneOpen} onClose={() => setPhoneOpen(false)} scanner={scanner} />
+      {gstinMissing && (
+        <div className="px-4 pt-4">
+          <ErrorBanner
+            title="Add your GSTIN before billing"
+            message={
+              can("settings.manage")
+                ? "Bills can't be saved until your shop's GSTIN is set."
+                : "Bills can't be saved until your shop's GSTIN is set. Ask the owner to add it in Settings."
+            }
+            extra={
+              can("settings.manage") && (
+                <Link to="/settings/business" className="font-medium text-navy-600 hover:underline">
+                  Open Settings → Business profile
+                </Link>
+              )
+            }
+          />
+        </div>
+      )}
       {shift.isPending ? (
         <div className="grid flex-1 gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_420px]">
           <Skeleton className="h-full rounded-card" />
@@ -410,6 +436,16 @@ function PosScreen({
       }
       // 409: prices changed, not enough stock or no shift; show why and refresh the quote.
       if (err instanceof ApiError && err.status === 409) void quote.refetch();
+      // No answer from the server: the bill may have been saved anyway. Charging again without
+      // changing the cart is safe (same Idempotency-Key), but editing it first is not.
+      if (err instanceof ApiError && err.code === "NETWORK") {
+        toast({
+          message:
+            "No answer from the server. The bill may already be saved: check Invoices, or press Charge again without changing the cart.",
+          tone: "error",
+        });
+        return;
+      }
       toast({ message: errorMessage(err), tone: "error" });
     }
   };

@@ -45,6 +45,7 @@ export const printSettingsSchema = z.strictObject({
   invoiceTerms: optionalText(1000).default(null),
   footerText: optionalText(200).default("Thank you for your business."),
   signatureLabel: optionalText(100).default(null),
+  // Left over from job cards (removed); nothing prints it. Kept so saved settings still parse.
   showNextServiceDue: z.boolean().default(true),
 });
 

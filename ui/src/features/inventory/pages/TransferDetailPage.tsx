@@ -14,7 +14,7 @@ import { useToast } from "@/components/ui/Toast";
 import type { DocLine } from "@/lib/types";
 import { errorMessage, formatDateTime } from "@/lib/utils";
 import { useTransfer, useTransferAction } from "../api";
-import { qtyWithUnit, transferStatusBadge } from "../components/common";
+import { qtyWithUnit, transferStatusBadge } from "../components/format";
 
 export function TransferDetailPage() {
   const { id } = useParams();

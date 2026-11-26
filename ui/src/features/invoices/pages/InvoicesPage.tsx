@@ -24,7 +24,8 @@ import type { InvoiceSummary } from "@/lib/types";
 import { cn, formatDate } from "@/lib/utils";
 import { useInvoices } from "../api";
 import { CancelInvoiceDialog } from "../components/CancelInvoiceDialog";
-import { InvoicesTabs, InvoiceStatusBadge, openInvoicePrint } from "../components/common";
+import { InvoicesTabs, InvoiceStatusBadge } from "../components/common";
+import { openInvoicePrint } from "../components/print-actions";
 
 const TZ = "Asia/Kolkata";
 // Calendar day in the business timezone, as the API expects (YYYY-MM-DD).
@@ -46,7 +47,7 @@ export function InvoicesPage() {
   const navigate = useNavigate();
   const { can, me } = useAuth();
   const [params, setParams] = useSearchParams();
-  const [search, setSearch] = useState(params.get("search") ?? "");
+  const [search, setSearch] = useState(() => params.get("search") ?? "");
   const debounced = useDebounced(search.trim());
   const [cancelling, setCancelling] = useState<InvoiceSummary | null>(null);
 
@@ -162,7 +163,6 @@ export function InvoicesPage() {
           items={[
             { label: "View invoice", onSelect: () => navigate(`/invoices/${i.id}`) },
             ...(i.kind === "SALE" ? [{ label: "Print", onSelect: () => openInvoicePrint(i.id) }] : []),
-            { label: "Send on WhatsApp (Phase 7)", disabled: true, onSelect: () => {} },
             ...(can("invoice.cancel") && i.status !== "CANCELLED"
               ? [
                   {

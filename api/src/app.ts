@@ -3,6 +3,7 @@ import cors from "cors";
 import { env, isProduction } from "./config/env";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
 import { requestLogger } from "./middleware/request-logger";
+import { securityHeaders } from "./middleware/security-headers";
 import { apiRoutes, publicRoutes } from "./modules/index.routes";
 
 // Outside production any local origin works (Vite may move to 5174, or the app opened via 127.0.0.1).
@@ -16,6 +17,7 @@ const app = express();
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 app.use(requestLogger);
+app.use(securityHeaders);
 app.use(
   cors({
     origin: (origin, callback) => callback(null, !origin || isAllowedOrigin(origin)),

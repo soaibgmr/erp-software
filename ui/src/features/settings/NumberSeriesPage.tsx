@@ -75,10 +75,13 @@ export function NumberSeriesPage() {
   );
 }
 
+// The parent keys each row on the saved prefix and padding, so these drafts reset when the server value changes.
 function SeriesRow({ series }: { series: DocumentSequence }) {
   const toast = useToast();
   const update = useUpdateSequence();
+  // react-doctor-disable-next-line react-doctor/no-derived-useState
   const [prefix, setPrefix] = useState(series.prefix);
+  // react-doctor-disable-next-line react-doctor/no-derived-useState
   const [padding, setPadding] = useState(series.padding);
   const [error, setError] = useState<string>();
 
@@ -93,7 +96,11 @@ function SeriesRow({ series }: { series: DocumentSequence }) {
       await update.mutateAsync({ branchId: series.branchId, docType: series.docType, body: { prefix, padding } });
       toast({ message: `${series.label} series saved` });
     } catch (err) {
-      setError(err instanceof ApiError ? (err.fieldErrors.prefix ?? err.message) : errorMessage(err));
+      setError(
+        err instanceof ApiError
+          ? (err.fieldErrors.prefix ?? err.fieldErrors.padding ?? err.message)
+          : errorMessage(err),
+      );
     }
   };
 

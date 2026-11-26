@@ -79,8 +79,8 @@ export function ReportsPage() {
 function TallyExportCard() {
   const { me } = useAuth();
   const toast = useToast();
-  const [from, setFrom] = useState(monthStart());
-  const [to, setTo] = useState(today());
+  const [from, setFrom] = useState(monthStart);
+  const [to, setTo] = useState(today);
   const [scope, setScope] = useState<BranchScopeOption>("branch");
   const [kinds, setKinds] = useState<TallyVoucherKind[]>([...TALLY_VOUCHER_KINDS]);
   const [busy, setBusy] = useState(false);
@@ -139,8 +139,8 @@ function TallyExportCard() {
           ))}
         </div>
         <p className="text-helper text-slate">
-          Create these ledgers in Tally first: party names, Sales @ n%, Output CGST, SGST, IGST,
-          Cash, Bank, Cash Sales and Round Off.
+          Create these ledgers in Tally first: party names, Sales @ n%, Output CGST, SGST, IGST, Cash, Bank, Cash Sales
+          and Round Off.
         </p>
         <Button
           onClick={run}

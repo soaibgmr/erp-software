@@ -2,6 +2,9 @@
   "name": "@erp-software/ui",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.12"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

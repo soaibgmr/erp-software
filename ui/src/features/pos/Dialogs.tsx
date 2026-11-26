@@ -12,7 +12,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useCloseShift, useDiscardHeldCart, useHeldCarts, useOpenShift } from "@/features/invoices/api";
 import type { CustomerCredit, HeldCart, ShiftReport } from "@/lib/types";
 import { cn, errorMessage, formatDateTime } from "@/lib/utils";
-import type { PosMode } from "./CartPanel";
+import type { PosMode } from "./modes";
 
 export interface PaymentRow {
   mode: PaymentMethod;
@@ -26,7 +26,10 @@ const inr = (paise: number) => formatINR(paise / 100, { exact: true });
 
 // ---------- Payment (split, tendered, credit remainder) ----------
 
+let nextRowId = 0;
+
 interface DraftRow {
+  id: number;
   mode: PaymentMethod;
   amount: string;
   tendered: string;
@@ -83,8 +86,10 @@ function PaymentForm({
 }) {
   const { can } = useAuth();
   const amount = (totalPaise / 100).toFixed(2);
-  const [rows, setRows] = useState<DraftRow[]>(
-    mode === "CREDIT" ? [] : [{ mode, amount, tendered: mode === "CASH" ? amount : "", reference: "" }],
+  const [rows, setRows] = useState<DraftRow[]>(() =>
+    mode === "CREDIT"
+      ? []
+      : [{ id: ++nextRowId, mode, amount, tendered: mode === "CASH" ? amount : "", reference: "" }],
   );
   const paid = rows.reduce((s, r) => s + toPaise(r.amount), 0);
   const remainder = totalPaise - paid;
@@ -144,7 +149,7 @@ function PaymentForm({
         </p>
       )}
       {rows.map((r, i) => (
-        <div key={i} className="grid grid-cols-[120px_minmax(0,1fr)_minmax(0,1fr)_32px] items-end gap-3">
+        <div key={r.id} className="grid grid-cols-[120px_minmax(0,1fr)_minmax(0,1fr)_32px] items-end gap-3">
           <Field label={i === 0 ? "Mode" : ""}>
             {(p) => (
               <Select
@@ -223,17 +228,19 @@ function PaymentForm({
         size="sm"
         icon={<Plus className="size-4" />}
         disabled={remainder <= 0}
-        onClick={() =>
+        onClick={() => {
+          const id = ++nextRowId;
           setRows((rs) => [
             ...rs,
             {
+              id,
               mode: rs.some((r) => r.mode === "UPI") ? "CARD" : "UPI",
               amount: (remainder / 100).toFixed(2),
               tendered: "",
               reference: "",
             },
-          ])
-        }
+          ]);
+        }}
       >
         Split payment
       </Button>
@@ -577,6 +584,7 @@ export function CloseShiftDialog({
         className="space-y-4"
         onSubmit={async (e) => {
           e.preventDefault();
+          if (close.isPending) return;
           try {
             const body = {
               counted: Object.fromEntries(COUNTED.map((m) => [m, Number(counted[m] || 0)])),

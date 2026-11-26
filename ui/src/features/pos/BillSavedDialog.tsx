@@ -36,7 +36,9 @@ export function BillSavedDialog({
   const primary = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (open) setTimeout(() => primary.current?.focus(), 0);
+    if (!open) return;
+    const id = setTimeout(() => primary.current?.focus(), 0);
+    return () => clearTimeout(id);
   }, [open]);
 
   useHotkey("p", () => onPrint(format), { enabled: open });

@@ -4,7 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { formatMobile, optionalMobileSchema, passwordSchema } from "@erp-software/shared";
-import { meKey, useAuth } from "@/app/auth";
+import { useAuth } from "@/app/auth";
+import { meKey } from "@/app/auth-keys";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { DescriptionList, PageHeader } from "@/components/ui/Controls";
@@ -51,7 +52,10 @@ export function ProfilePage() {
     mutationFn: (body: unknown) => api.patch("/users/me", body),
     onSuccess: () => qc.invalidateQueries({ queryKey: meKey }),
   });
-  const changePassword = useMutation({ mutationFn: (body: unknown) => api.patch("/users/me/password", body) });
+  const changePassword = useMutation({
+    mutationFn: (body: unknown) => api.patch("/users/me/password", body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: meKey }),
+  });
 
   if (!me) return null;
 

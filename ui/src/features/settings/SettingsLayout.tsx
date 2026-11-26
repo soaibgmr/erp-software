@@ -4,7 +4,7 @@ import { useAuth } from "@/app/auth";
 import { PageHeader } from "@/components/ui/Controls";
 import { cn } from "@/lib/utils";
 
-export const SETTINGS_TABS: { to: string; label: string; permission: Permission }[] = [
+const SETTINGS_TABS: { to: string; label: string; permission: Permission }[] = [
   { to: "business", label: "Business profile", permission: "settings.manage" },
   { to: "branches", label: "Branches", permission: "branch.manage" },
   { to: "users", label: "Users", permission: "user.manage" },

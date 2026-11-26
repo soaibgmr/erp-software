@@ -225,6 +225,7 @@ export function ImportPage() {
                 accept=".csv,text/csv"
                 className="sr-only"
                 id="import-file"
+                aria-label="CSV file"
                 onChange={(e) => void onFile(e.target.files?.[0])}
               />
               <Button

@@ -19,7 +19,7 @@ export function OldDuesDialog({ customer, open, onClose }: { customer: Customer;
 
 function OldDuesForm({ customer, onClose }: { customer: Customer; onClose: () => void }) {
   const [amount, setAmount] = useState("");
-  const [asOfDate, setAsOfDate] = useState(today());
+  const [asOfDate, setAsOfDate] = useState(today);
   const [note, setNote] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const add = useAddOldDues();

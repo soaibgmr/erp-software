@@ -12,15 +12,7 @@ import { useCustomerCredit } from "@/features/invoices/api";
 import type { CustomerCredit } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { lineKey, qtyOf, type CartAction, type CartState } from "./cart";
-
-export type PosMode = "CASH" | "UPI" | "CARD" | "CREDIT";
-// Order matters: Alt+1 … Alt+4.
-export const MODES: { value: PosMode; label: string }[] = [
-  { value: "CASH", label: "Cash" },
-  { value: "UPI", label: "UPI" },
-  { value: "CARD", label: "Card" },
-  { value: "CREDIT", label: "Pay later" },
-];
+import { MODES, type PosMode } from "./modes";
 
 const inr = (paise: number) => formatINR(paise / 100, { exact: true });
 
@@ -98,10 +90,13 @@ export function CartPanel({
               const qty = qtyOf(l);
               const short = l.available !== null && qty > l.available;
               return (
+                // Clicking a line is a mouse shortcut; keyboard users select lines with the POS shortcuts,
+                // and every control inside the line is its own button or input.
+                // react-doctor-disable-next-line react-doctor/no-noninteractive-element-interactions
                 <li
                   key={key}
                   id={`pos-line-${key}`}
-                  aria-selected={selectedKey === key}
+                  aria-current={selectedKey === key ? "true" : undefined}
                   onClick={() => onSelect(key)}
                   className={cn(
                     "border-l-4 px-4 py-3 transition-colors",

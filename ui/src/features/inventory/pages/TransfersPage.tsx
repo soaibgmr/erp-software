@@ -12,7 +12,8 @@ import { useBranches } from "@/features/settings/api";
 import type { StockTransfer } from "@/lib/types";
 import { cn, formatDateTime } from "@/lib/utils";
 import { useTransfers } from "../api";
-import { InventoryTabs, transferStatusBadge } from "../components/common";
+import { InventoryTabs } from "../components/common";
+import { transferStatusBadge } from "../components/format";
 
 type Direction = "all" | "in" | "out";
 

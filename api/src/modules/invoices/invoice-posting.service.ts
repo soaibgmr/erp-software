@@ -76,6 +76,14 @@ export class InvoicePostingService implements IInvoicePostingService {
     if (!shiftId) throw conflict("Open a shift before billing");
 
     const priced = await this.pricer.price(auth, branchId, input);
+    // A tax invoice needs the seller's GSTIN (CGST Rule 46); shops add it in Settings.
+    if (!priced.sellerGstin) {
+      throw new HttpError(
+        422,
+        "GSTIN_REQUIRED",
+        "Add your GSTIN in Settings → Business profile (or on this branch) before billing",
+      );
+    }
     if (priced.quote.issues.length) {
       throw fieldErrors(
         priced.quote.issues.map((i) => ({

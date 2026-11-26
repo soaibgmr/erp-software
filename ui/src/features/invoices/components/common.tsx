@@ -1,21 +1,10 @@
 import { NavLink } from "react-router";
-import {
-  INVOICE_STATUS_LABELS,
-  PAYMENT_METHOD_LABELS,
-  PRINT_FORMAT_INFO,
-  PRINT_FORMATS,
-  type PrintFormat,
-  type PrintParam,
-  type InvoiceStatus,
-  type PaymentMethod,
-  type Permission,
-} from "@erp-software/shared";
+import { INVOICE_STATUS_LABELS, type InvoiceStatus, type Permission } from "@erp-software/shared";
 import { useAuth } from "@/app/auth";
 import { Badge, type Tone } from "@/components/ui/Badge";
-import { invoicePrintPath, openPrintTab } from "@/lib/print";
 import { cn } from "@/lib/utils";
 
-export const invoiceStatusTone: Record<InvoiceStatus, Tone> = {
+const invoiceStatusTone: Record<InvoiceStatus, Tone> = {
   PAID: "success",
   PARTIALLY_PAID: "info",
   UNPAID: "warning",
@@ -25,22 +14,6 @@ export const invoiceStatusTone: Record<InvoiceStatus, Tone> = {
 
 export function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
   return <Badge tone={invoiceStatusTone[status]}>{INVOICE_STATUS_LABELS[status]}</Badge>;
-}
-
-export const paymentLabel = (mode: PaymentMethod) => PAYMENT_METHOD_LABELS[mode];
-
-// Opens the print view in a new tab. Without a format it uses the global paper size from Settings.
-export function openInvoicePrint(id: string, format?: PrintParam) {
-  openPrintTab(invoicePrintPath(id, format));
-}
-
-// "Print" menu entries: the global paper size first, then the other sizes.
-export function printMenuItems(id: string, defaultFormat: PrintFormat | undefined) {
-  const first = defaultFormat ?? "A4";
-  return [first, ...PRINT_FORMATS.filter((f) => f !== first)].map((f) => ({
-    label: f === first ? `${PRINT_FORMAT_INFO[f].label} (default)` : PRINT_FORMAT_INFO[f].label,
-    onSelect: () => openInvoicePrint(id, PRINT_FORMAT_INFO[f].param),
-  }));
 }
 
 const TABS: { to: string; label: string; permissions: Permission[]; end?: boolean }[] = [

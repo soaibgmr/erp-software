@@ -17,7 +17,7 @@ import { InvoiceStatusBadge } from "@/features/invoices/components/common";
 import { Pagination } from "@/components/ui/DataTable";
 import { errorMessage, formatDate, formatDateTime } from "@/lib/utils";
 import { useCustomer, useDeleteCustomer } from "./api";
-import { customerTypeTone } from "./CustomersPage";
+import { customerTypeTone } from "./tones";
 import { OldDuesDialog } from "./OldDuesDialog";
 
 export function CustomerDetailPage() {

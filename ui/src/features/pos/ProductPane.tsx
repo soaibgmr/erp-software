@@ -11,30 +11,8 @@ import { api } from "@/lib/api-client";
 import { useDebounced } from "@/lib/hooks";
 import type { Item, LabourService } from "@/lib/types";
 import { cn, errorMessage } from "@/lib/utils";
-import { isScan, type CartLine } from "./cart";
-
-type NewLine = Omit<CartLine, "quantity" | "discount">;
-
-export const itemToLine = (i: {
-  id: string;
-  name: string;
-  sku: string;
-  unit: string;
-  salePrice: string;
-  gstRate: number;
-  taxInclusive: boolean;
-  stock: { available: string } | null;
-}): NewLine => ({
-  kind: "ITEM",
-  id: i.id,
-  name: i.name,
-  sku: i.sku,
-  unit: i.unit,
-  rate: Number(i.salePrice),
-  gstRate: i.gstRate,
-  taxInclusive: i.taxInclusive,
-  available: i.stock ? Number(i.stock.available) : 0,
-});
+import { isScan } from "./cart";
+import { itemToLine, type NewLine } from "./item-to-line";
 
 const labourToLine = (l: LabourService): NewLine => ({
   kind: "LABOUR",

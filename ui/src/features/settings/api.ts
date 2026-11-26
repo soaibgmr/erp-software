@@ -8,7 +8,7 @@ import type {
   TaxSettings,
   UserStatus,
 } from "@erp-software/shared";
-import { meKey } from "@/app/auth";
+import { meKey } from "@/app/auth-keys";
 import { api } from "@/lib/api-client";
 import type { AuditLog, Branch, Business, DocumentSequence, PermissionGroup, Role, User } from "@/lib/types";
 
@@ -93,8 +93,11 @@ export function useSaveUser() {
 }
 
 export function useSetUserPassword() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, password }: { id: string; password: string }) => api.post(`/users/${id}/password`, { password }),
+    // A password reset can end the user's sessions; refresh the list so its status stays current.
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
   });
 }
 

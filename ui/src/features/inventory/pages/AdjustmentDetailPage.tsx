@@ -15,7 +15,8 @@ import { useToast } from "@/components/ui/Toast";
 import type { StockAdjustmentDetail } from "@/lib/types";
 import { errorMessage, formatDateTime } from "@/lib/utils";
 import { useAdjustment, useDecideAdjustment } from "../api";
-import { adjustmentStatusBadge, SignedQty } from "../components/common";
+import { SignedQty } from "../components/common";
+import { adjustmentStatusBadge } from "../components/format";
 
 type Line = StockAdjustmentDetail["lines"][number];
 

@@ -8,6 +8,8 @@ import { provisionBusiness } from "../modules/business/provision";
 // 1. The platform admin (approves shops at /admin) from SEED_PLATFORM_ADMIN_EMAIL / _PASSWORD.
 // 2. Optionally a demo shop, ACTIVE, with its owner, from SEED_ADMIN_EMAIL / _MOBILE / _PASSWORD.
 // Re-running never overwrites data someone has edited (passwords, business details, roles).
+// Seed passwords must be strong (the example values are refused), and the demo shop is never
+// created on a production database.
 async function main() {
   await seedPlatformAdmin();
   await seedDemoShop();
@@ -20,6 +22,7 @@ async function seedPlatformAdmin() {
     console.log("Skipped the platform admin: set SEED_PLATFORM_ADMIN_EMAIL and SEED_PLATFORM_ADMIN_PASSWORD");
     return;
   }
+  assertStrongPassword("SEED_PLATFORM_ADMIN_PASSWORD", password);
   const admin = await prisma.platformAdmin.upsert({
     where: { email },
     update: {},
@@ -35,6 +38,11 @@ async function seedDemoShop() {
     console.log("Skipped the demo shop: set SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD");
     return;
   }
+  if (process.env.NODE_ENV === "production") {
+    console.log("Skipped the demo shop: never created on a production database");
+    return;
+  }
+  assertStrongPassword("SEED_ADMIN_PASSWORD", password);
   if (await prisma.user.findUnique({ where: { email } })) {
     console.log(`Demo shop owner ${email} already exists`);
     return;
@@ -63,6 +71,12 @@ async function seedDemoShop() {
     }),
   );
   console.log(`Demo shop ${created.businessId} with owner ${email}${mobile ? ` / ${mobile}` : ""}`);
+}
+
+function assertStrongPassword(name: string, password: string) {
+  if (password.length < 12 || /change-?me|password|12345/i.test(password)) {
+    throw new Error(`${name} is too weak: use at least 12 characters, not an example value`);
+  }
 }
 
 main()

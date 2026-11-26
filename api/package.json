@@ -2,6 +2,9 @@
   "name": "@erp-software/api",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.12"
+  },
   "description": "ERP Software REST API",
   "main": "dist/server.js",
   "type": "commonjs",

@@ -1,14 +1,13 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { ArrowLeft, Loader2, Printer } from "lucide-react";
-import { stateName, type PrintParam } from "@erp-software/shared";
+import { stateName } from "@erp-software/shared";
 import { Logo } from "@/app/AppShell";
 import { Button } from "@/components/ui/Button";
 import { ErrorBanner } from "@/components/ui/States";
 import type { Branch, Business } from "@/lib/types";
 import { cn, errorMessage } from "@/lib/utils";
-
-export type PaperSize = PrintParam;
+import { joinAddress, sellerGstin, type PaperSize } from "./print-utils";
 
 const PAGE_CSS: Record<PaperSize, string> = {
   a4: "@page { size: A4; margin: 12mm; }",
@@ -26,8 +25,6 @@ const SHEET: Record<PaperSize, string> = {
 
 // A5 and 58 mm reuse the A4 and 80 mm layouts scaled to the narrower paper (printable width ratio).
 const ZOOM: Partial<Record<PaperSize, number>> = { a5: 0.71, thermal58: 0.73 };
-
-export const isReceipt = (size: PaperSize) => size === "thermal" || size === "thermal58";
 
 // Print views render outside the app shell. The toolbar is screen-only; @page sets the paper.
 export function PrintShell({
@@ -97,11 +94,6 @@ export function PrintShell({
     </div>
   );
 }
-
-export const joinAddress = (...parts: (string | null | undefined)[]) => parts.filter(Boolean).join(", ");
-
-// GSTIN printed on documents: the branch's own registration, else the business's.
-export const sellerGstin = (business: Business, branch: Branch) => branch.gstin ?? business.gstin;
 
 // Logo tile + business block on the left, document title on the right; yellow 4 px rule on top.
 export function DocumentHeader({

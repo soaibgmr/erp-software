@@ -11,7 +11,8 @@ import { EmptyState, NoResults } from "@/components/ui/States";
 import type { StockAdjustment } from "@/lib/types";
 import { formatDateTime } from "@/lib/utils";
 import { useAdjustments } from "../api";
-import { adjustmentStatusBadge, InventoryTabs } from "../components/common";
+import { InventoryTabs } from "../components/common";
+import { adjustmentStatusBadge } from "../components/format";
 
 const STATUS_FILTERS: { value: StockAdjustmentStatus | undefined; label: string }[] = [
   { value: undefined, label: "All" },

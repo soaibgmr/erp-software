@@ -122,12 +122,6 @@ export function BillingSettingsPage() {
             <Field label="Footer" error={errors.footerText} className="sm:col-span-2">
               {(p) => <Input {...p} {...register("footerText")} />}
             </Field>
-            <Checkbox
-              className="sm:col-span-2"
-              label="Print next service due"
-              description="Adds the next service km and date to workshop invoices."
-              {...register("showNextServiceDue")}
-            />
           </FormGrid>
         )}
       </SettingsCard>
