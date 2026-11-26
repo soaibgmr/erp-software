@@ -50,14 +50,20 @@ export class DashboardService implements IDashboardService {
     const end = at(addDays(today, 1));
     const ids = scope.branchIds;
 
-    const [sales, previous, collections, receivables] = ids.length
+    const [sales, previous, collections, receivables, gst] = ids.length
       ? await Promise.all([
           this.dashboard.salesTotals(ids, start, end),
           this.dashboard.salesTotals(ids, at(previousFrom), start),
           this.dashboard.collections(ids, start, end),
           this.reports.openInvoices(ids, tz),
+          this.dashboard.gstTotals(ids, start, end),
         ])
-      : [{ total: "0", bills: 0 }, { total: "0", bills: 0 }, [], []];
+      : [{ total: "0", bills: 0 }, { total: "0", bills: 0 }, [], [], null];
+
+    const net = (sale: string | undefined, ret: string | undefined) => toPaise(sale ?? "0") - toPaise(ret ?? "0");
+    const cgst = net(gst?.cgst, gst?.returnCgst);
+    const sgst = net(gst?.sgst, gst?.returnSgst);
+    const igst = net(gst?.igst, gst?.returnIgst);
 
     const salesPaise = toPaise(sales.total);
     const previousPaise = toPaise(previous.total);
@@ -97,6 +103,13 @@ export class DashboardService implements IDashboardService {
         total: money(collectedPaise),
         percentOfSales: pct(collectedPaise, salesPaise),
         byMode: collections.map((c) => ({ mode: c.mode, amount: money(toPaise(c.amount)) })),
+      },
+      gst: {
+        taxable: money(net(gst?.taxable, gst?.returnTaxable)),
+        cgst: money(cgst),
+        sgst: money(sgst),
+        igst: money(igst),
+        total: money(cgst + sgst + igst),
       },
       receivables: {
         total: money(receivable),

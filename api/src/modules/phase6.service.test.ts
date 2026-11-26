@@ -311,6 +311,16 @@ describe("DashboardService", () => {
           { mode: "CASH", amount: "900.00" },
           { mode: "UPI", amount: "300.00" },
         ],
+        gstTotals: async () => ({
+          taxable: "1271.19",
+          cgst: "114.40",
+          sgst: "114.40",
+          igst: "0.00",
+          returnTaxable: "100.00",
+          returnCgst: "9.00",
+          returnSgst: "9.00",
+          returnIgst: "0.00",
+        }),
       }),
       stub<IReportRepository>({
         openInvoices: async () => [
@@ -327,6 +337,7 @@ describe("DashboardService", () => {
     expect(calls[0]![0]!.getTime() - calls[1]![0]!.getTime()).toBe(7 * 86_400_000);
     expect(s.sales).toMatchObject({ total: "1500.00", bills: 3, average: "500.00", changePercent: 50 });
     expect(s.collected).toMatchObject({ total: "1200.00", percentOfSales: 80 });
+    expect(s.gst).toEqual({ taxable: "1171.19", cgst: "105.40", sgst: "105.40", igst: "0.00", total: "210.80" });
     expect(s.receivables).toEqual({ total: "300.00", customers: 2, overdue30: "200.00", overdueCustomers: 1 });
   });
 });

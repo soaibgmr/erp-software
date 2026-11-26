@@ -118,7 +118,7 @@ function Dashboard() {
           className="mb-6"
         />
       ) : (
-        <Kpis data={summary.data} range={range} />
+        <Kpis data={summary.data} range={range} scope={scope} canReports={can("report.view")} />
       )}
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
@@ -200,12 +200,22 @@ const periodWord: Record<DashboardRange, string> = {
   "30d": "previous 30 days",
 };
 
-function Kpis({ data, range }: { data: DashboardSummary | undefined; range: DashboardRange }) {
-  const cols = "xl:grid-cols-3";
+function Kpis({
+  data,
+  range,
+  scope,
+  canReports,
+}: {
+  data: DashboardSummary | undefined;
+  range: DashboardRange;
+  scope: BranchScopeOption;
+  canReports: boolean;
+}) {
+  const cols = "xl:grid-cols-4";
   if (!data) {
     return (
       <div className={cn("grid gap-4 sm:grid-cols-2", cols)}>
-        {Array.from({ length: 3 }, (_, i) => (
+        {Array.from({ length: 4 }, (_, i) => (
           <Card key={i} className="px-5 py-5">
             <Skeleton className="h-4 w-24" />
             <Skeleton className="mt-3 h-8 w-32" />
@@ -215,7 +225,13 @@ function Kpis({ data, range }: { data: DashboardSummary | undefined; range: Dash
       </div>
     );
   }
-  const { sales, collected, receivables } = data;
+  const { sales, collected, gst, receivables } = data;
+  const gstSplit = [
+    Number(gst.cgst) !== 0 && `CGST ${inr(gst.cgst)}`,
+    Number(gst.sgst) !== 0 && `SGST ${inr(gst.sgst)}`,
+    Number(gst.igst) !== 0 && `IGST ${inr(gst.igst)}`,
+  ].filter(Boolean);
+  const gstr3b = `/reports/gstr3b?${new URLSearchParams({ from: data.from, to: data.to, scope })}`;
   const change = sales.changePercent;
   const modes = collected.byMode.filter((m) => Number(m.amount) !== 0).slice(0, 2);
   return (
@@ -254,6 +270,23 @@ function Kpis({ data, range }: { data: DashboardSummary | undefined; range: Dash
           modes.length
             ? modes.map((m) => `${PAYMENT_METHOD_LABELS[m.mode] ?? m.mode} ${inr(m.amount)}`).join(" · ")
             : "No payments yet"
+        }
+      />
+      <KpiCard
+        label="GST on sales"
+        value={inr(gst.total)}
+        badge={
+          canReports && (
+            <Link to={gstr3b} className="text-helper font-medium text-navy-600 hover:underline">
+              GSTR-3B
+            </Link>
+          )
+        }
+        sub={
+          <>
+            Taxable {inr(gst.taxable)}
+            {gstSplit.length > 0 && <span className="block">{gstSplit.join(" · ")}</span>}
+          </>
         }
       />
       <KpiCard

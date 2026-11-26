@@ -36,6 +36,11 @@ export const dashboardSchemas = {
           byMode: { type: "array", items: { type: "object", properties: { mode: { type: "string" }, amount: money } } },
         },
       },
+      gst: {
+        type: "object",
+        description: "GST on sales in the period, net of credit notes raised in it.",
+        properties: { taxable: money, cgst: money, sgst: money, igst: money, total: money },
+      },
       receivables: {
         type: "object",
         properties: {

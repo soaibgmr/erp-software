@@ -27,6 +27,15 @@ export interface DashboardSummaryDto {
     percentOfSales: number | null;
     byMode: { mode: PaymentMethod | string; amount: string }[];
   };
+  // GST on sales in the period, net of credit notes raised in it (matches GSTR-3B outward supplies).
+  gst: {
+    taxable: string;
+    cgst: string;
+    sgst: string;
+    igst: string;
+    // cgst + sgst + igst
+    total: string;
+  };
   receivables: {
     total: string;
     customers: number;
