@@ -1,8 +1,8 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { BusinessStatus, BusinessStatusUpdate } from "@erp-software/shared";
+import type { BusinessStatus, BusinessStatusUpdate, PlatformChangePassword } from "@erp-software/shared";
 import { api } from "@/lib/api-client";
-import type { DemoRequest, PlatformAdmin, PlatformBusiness } from "@/lib/types";
+import type { DemoRequest, PlatformAdmin, PlatformBusiness, PlatformSummary } from "@/lib/types";
 
 // The platform admin console keeps its own token, apart from any shop login in the same browser.
 const TOKEN_KEY = "ami.admin.token";
@@ -46,6 +46,7 @@ export function usePlatformToken() {
 export const platformKeys = {
   all: ["platform"] as const,
   me: () => [...platformKeys.all, "me"] as const,
+  summary: () => [...platformKeys.all, "summary"] as const,
   shops: (filter: ShopFilter) => [...platformKeys.all, "shops", filter] as const,
   demoRequests: (filter: DemoRequestFilter) => [...platformKeys.all, "demo-requests", filter] as const,
 };
@@ -80,6 +81,28 @@ export function usePlatformMe(token: string | null) {
   });
 }
 
+export function usePlatformSummary(token: string | null) {
+  return useQuery({
+    queryKey: platformKeys.summary(),
+    queryFn: ({ signal }) => api.get<PlatformSummary>("/platform/summary", undefined, signal, { bearer: token }),
+    enabled: Boolean(token),
+    refetchInterval: 60_000,
+  });
+}
+
+// Other devices are signed out; this one keeps working with the new token from the response.
+export function useChangePlatformPassword(token: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: PlatformChangePassword) =>
+      api.patch<{ admin: PlatformAdmin; token: string }>("/platform/me/password", body, { bearer: token }),
+    onSuccess: (res) => {
+      writeToken(res.token);
+      queryClient.setQueryData(platformKeys.me(), res.admin);
+    },
+  });
+}
+
 export function usePlatformShops(token: string | null, filter: ShopFilter) {
   return useQuery({
     queryKey: platformKeys.shops(filter),
@@ -100,7 +123,10 @@ export function useUpdateShopStatus(token: string | null) {
   return useMutation({
     mutationFn: ({ id, ...body }: BusinessStatusUpdate & { id: string }) =>
       api.patch<PlatformBusiness>(`/platform/businesses/${id}/status`, body, { bearer: token }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [...platformKeys.all, "shops"] }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [...platformKeys.all, "shops"] });
+      void queryClient.invalidateQueries({ queryKey: platformKeys.summary() });
+    },
   });
 }
 
@@ -124,6 +150,9 @@ export function useSetDemoRequestHandled(token: string | null) {
   return useMutation({
     mutationFn: ({ id, handled }: { id: string; handled: boolean }) =>
       api.patch<DemoRequest>(`/platform/demo-requests/${id}`, { handled }, { bearer: token }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [...platformKeys.all, "demo-requests"] }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [...platformKeys.all, "demo-requests"] });
+      void queryClient.invalidateQueries({ queryKey: platformKeys.summary() });
+    },
   });
 }

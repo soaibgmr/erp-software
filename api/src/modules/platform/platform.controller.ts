@@ -18,6 +18,16 @@ export class PlatformController {
     sendSuccess(res, await this.platform.me(res.locals.platformAdmin));
   };
 
+  changePassword = async (_req: Request, res: Response) => {
+    const { currentPassword, newPassword } = res.locals.body;
+    const result = await this.platform.changePassword(res.locals.platformAdmin, currentPassword, newPassword);
+    sendSuccess(res, result, { message: "Password changed. Other devices are signed out." });
+  };
+
+  summary = async (_req: Request, res: Response) => {
+    sendSuccess(res, await this.platform.summary());
+  };
+
   listBusinesses = async (_req: Request, res: Response) => {
     sendPaginated(res, await this.platform.listBusinesses(res.locals.query));
   };

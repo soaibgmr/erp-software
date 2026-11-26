@@ -150,6 +150,12 @@ export const platformLoginSchema = z.strictObject({
   email,
   password: z.string().min(1, "Enter your password").max(72),
 });
+export const platformChangePasswordSchema = z.strictObject({
+  currentPassword: z.string().min(1, "Enter your current password").max(72),
+  newPassword: passwordSchema,
+});
+export type PlatformChangePassword = z.output<typeof platformChangePasswordSchema>;
+
 export const businessStatusUpdateSchema = z.strictObject({
   status: z.enum(["ACTIVE", "SUSPENDED", "REJECTED"]),
   note: optionalText(300),

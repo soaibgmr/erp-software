@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import { TYPES } from "../../config/ioc.types";
 import { env } from "../../config/env";
 import { BCRYPT_ROUNDS } from "../../common/constants";
-import { badRequest, notFound, unauthorized } from "../../common/http-error";
+import { badRequest, fieldErrors, notFound, unauthorized } from "../../common/http-error";
 import type { Paginated } from "../../common/pagination";
 import { ACCOUNT_LOCK, assertNotLocked, type IAttemptLimiter } from "../../common/attempt-limiter";
 import { PLATFORM_AUDIENCE } from "../../common/tenant";
@@ -22,12 +22,16 @@ import type {
   PlatformAdminDto,
   PlatformBusinessDto,
   PlatformLoginResponseDto,
+  PlatformSummaryDto,
   UpdateBusinessStatusDto,
 } from "./platform.types";
 
 const DUMMY_HASH = bcrypt.hashSync("dummy-password-for-timing", BCRYPT_ROUNDS);
 // No refresh token for the admin console: sign in again after a working day.
 const TOKEN_TTL = "12h";
+
+const signToken = (adminId: string) =>
+  jwt.sign({}, env.JWT_SECRET, { subject: adminId, audience: PLATFORM_AUDIENCE, expiresIn: TOKEN_TTL });
 
 @injectable()
 export class PlatformService implements IPlatformService {
@@ -50,18 +54,43 @@ export class PlatformService implements IPlatformService {
     await this.limiter.reset(lockKey);
 
     await this.platform.touchAdminLogin(found.id);
-    const token = jwt.sign({}, env.JWT_SECRET, {
-      subject: found.id,
-      audience: PLATFORM_AUDIENCE,
-      expiresIn: TOKEN_TTL,
-    });
-    return { admin: { id: found.id, name: found.name, email: found.email }, token };
+    const { passwordHash: _hash, ...admin } = found;
+    return { admin: { ...admin, lastLoginAt: new Date() }, token: signToken(found.id) };
   }
 
   async me(admin: PlatformAdminContext): Promise<PlatformAdminDto> {
     const found = await this.platform.findAdmin(admin.adminId);
     if (!found) throw unauthorized();
     return found;
+  }
+
+  async changePassword(
+    admin: PlatformAdminContext,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<PlatformLoginResponseDto> {
+    // Same lockout as login, so a stolen session can't be used to guess the password.
+    const lockKey = `platform-password:${admin.adminId}`;
+    await assertNotLocked(this.limiter, lockKey);
+    const found = await this.platform.findAdminCredentials(admin.email);
+    if (!found || found.id !== admin.adminId) throw unauthorized();
+    if (!(await bcrypt.compare(currentPassword, found.passwordHash))) {
+      await this.limiter.hit(lockKey, ACCOUNT_LOCK.windowMs);
+      throw fieldErrors([{ path: "currentPassword", message: "Current password is incorrect" }]);
+    }
+    if (currentPassword === newPassword) {
+      throw fieldErrors([{ path: "newPassword", message: "Choose a password different from the current one" }]);
+    }
+    await this.limiter.reset(lockKey);
+
+    const changedAt = new Date();
+    await this.platform.setAdminPassword(found.id, await bcrypt.hash(newPassword, BCRYPT_ROUNDS), changedAt);
+    const { passwordHash: _hash, ...rest } = found;
+    return { admin: { ...rest, passwordChangedAt: changedAt }, token: signToken(found.id) };
+  }
+
+  summary(): Promise<PlatformSummaryDto> {
+    return this.platform.summary();
   }
 
   listBusinesses(query: ListBusinessesQuery): Promise<Paginated<PlatformBusinessDto>> {

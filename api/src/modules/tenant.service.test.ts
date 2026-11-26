@@ -10,6 +10,7 @@ import { resolveBranchScope } from "../common/branch-scope";
 import { PLATFORM_AUDIENCE } from "../common/tenant";
 import type { IUnitOfWork } from "../common/unit-of-work";
 import { AuthMiddleware } from "../middleware/auth";
+import { PlatformAuthMiddleware } from "../middleware/platform-auth";
 import { authFor, branch, FakeAudit, FakeLimiter, ids, stub } from "../test/fakes";
 import { CustomerService } from "./customers/customer.service";
 import { UserService } from "./users/user.service";
@@ -317,6 +318,79 @@ describe("PlatformService", () => {
   it("only an active shop can be suspended", async () => {
     const { svc } = platform(pending);
     await expectHttp(svc.updateStatus(admin, pending.id, { status: "SUSPENDED", note: null }), 400);
+  });
+});
+
+describe("Platform admin password", () => {
+  const admin = { adminId: "admin-1", email: "admin@product.in" };
+  async function setup() {
+    const hash = await bcrypt.hash("old-password-1", 4);
+    const saved: { hash: string; changedAt: Date }[] = [];
+    const limiter = new FakeLimiter();
+    const repo = stub<IPlatformRepository>({
+      findAdminCredentials: async () => ({
+        id: "admin-1",
+        name: "Admin",
+        email: "admin@product.in",
+        lastLoginAt: null,
+        passwordChangedAt: null,
+        passwordHash: saved.at(-1)?.hash ?? hash,
+      }),
+      setAdminPassword: async (_id, h, changedAt) => {
+        saved.push({ hash: h, changedAt });
+      },
+    });
+    return { svc: new PlatformService(repo, new FakeMail(), new FakeAudit(), limiter), saved, limiter };
+  }
+
+  it("changes the password and hands back a new platform token", async () => {
+    const { svc, saved } = await setup();
+    const res = await svc.changePassword(admin, "old-password-1", "new-password-2");
+    expect(saved).toHaveLength(1);
+    expect(await bcrypt.compare("new-password-2", saved[0]!.hash)).toBe(true);
+    const payload = jwt.verify(res.token, env.JWT_SECRET, { audience: PLATFORM_AUDIENCE });
+    expect(typeof payload !== "string" && payload.sub).toBe("admin-1");
+  });
+
+  it("refuses a wrong current password and counts it towards the lockout", async () => {
+    const { svc, saved, limiter } = await setup();
+    const err = await expectHttp(svc.changePassword(admin, "wrong", "new-password-2"), 400);
+    expect((err.details as { fieldErrors: Record<string, string[]> }).fieldErrors.currentPassword).toBeDefined();
+    expect(saved).toHaveLength(0);
+    expect(limiter.counts.get("platform-password:admin-1")).toBe(1);
+  });
+
+  it("refuses the same password again", async () => {
+    const { svc } = await setup();
+    await expectHttp(svc.changePassword(admin, "old-password-1", "old-password-1"), 400);
+  });
+
+  it("tokens issued before the change stop working", async () => {
+    const changedAt = new Date();
+    const mw = new PlatformAuthMiddleware(
+      stub<IPlatformRepository>({
+        findAdmin: async () => ({
+          id: "admin-1",
+          name: "Admin",
+          email: "admin@product.in",
+          lastLoginAt: null,
+          passwordChangedAt: changedAt,
+        }),
+      }),
+    );
+    const run = (iat: number) => {
+      const token = jwt.sign({ iat }, env.JWT_SECRET, { subject: "admin-1", audience: PLATFORM_AUDIENCE });
+      let passed = false;
+      const req = { headers: { authorization: `Bearer ${token}` }, ip: "1.2.3.4" } as never;
+      const res = { locals: {} } as never;
+      return Promise.resolve(mw.requirePlatformAdmin(req, res, () => (passed = true))).then(
+        () => passed,
+        () => false,
+      );
+    };
+    const now = Math.floor(changedAt.getTime() / 1000);
+    expect(await run(now - 60)).toBe(false);
+    expect(await run(now)).toBe(true);
   });
 });
 

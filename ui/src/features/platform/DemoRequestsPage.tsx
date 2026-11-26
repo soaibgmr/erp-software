@@ -3,7 +3,7 @@ import { CalendarCheck } from "lucide-react";
 import { formatMobile } from "@erp-software/shared";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { SegmentedControl } from "@/components/ui/Controls";
+import { PageHeader, SegmentedControl } from "@/components/ui/Controls";
 import { DataTable, Pagination, type Column } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/States";
 import { useToast } from "@/components/ui/Toast";
@@ -78,10 +78,10 @@ export function PlatformDemoRequestsPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-page font-bold text-ink">Demo requests</h1>
-        <p className="text-body text-slate">People who booked a demo on the landing page. Call them back.</p>
-      </div>
+      <PageHeader
+        title="Demo requests"
+        description="People who booked a demo on the landing page. Call them back, then mark them handled."
+      />
       <SegmentedControl<Filter>
         label="Status"
         value={filter}

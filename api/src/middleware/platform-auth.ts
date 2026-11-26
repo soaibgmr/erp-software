@@ -19,16 +19,22 @@ export class PlatformAuthMiddleware {
     if (!header?.startsWith("Bearer ")) throw unauthorized();
 
     let adminId: string;
+    let issuedAt: number;
     try {
       const payload = jwt.verify(header.slice(7), env.JWT_SECRET, { audience: PLATFORM_AUDIENCE });
       if (typeof payload === "string" || !payload.sub) throw new Error("Invalid payload");
       adminId = payload.sub;
+      issuedAt = payload.iat ?? 0;
     } catch {
       throw unauthorized("Invalid or expired token");
     }
 
     const admin = await this.platform.findAdmin(adminId);
     if (!admin) throw unauthorized();
+    // Changing the password signs out every token issued before it (iat is in whole seconds).
+    if (admin.passwordChangedAt && issuedAt < Math.floor(admin.passwordChangedAt.getTime() / 1000)) {
+      throw unauthorized("Your password was changed. Log in again.");
+    }
     res.locals.platformAdmin = { adminId: admin.id, email: admin.email, ip: req.ip } satisfies PlatformAdminContext;
     next();
   };

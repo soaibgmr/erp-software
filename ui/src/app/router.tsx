@@ -11,6 +11,7 @@ import { RegisterPage } from "@/features/auth/RegisterPage";
 import { ForgotPasswordPage, ResetPasswordPage, VerifyEmailPage } from "@/features/auth/PasswordPages";
 import { PlatformShell, PlatformShopsPage } from "@/features/platform/PlatformPages";
 import { PlatformDemoRequestsPage } from "@/features/platform/DemoRequestsPage";
+import { PlatformAccountPage } from "@/features/platform/PlatformAccountPage";
 import { PhoneScanPage } from "@/features/pos-scanner/PhoneScanPage";
 import { CustomersPage } from "@/features/customers/CustomersPage";
 import { CustomerFormPage } from "@/features/customers/CustomerFormPage";
@@ -147,6 +148,7 @@ export const router = createBrowserRouter([
           { index: true, element: <Navigate to="/admin/shops" replace /> },
           { path: "shops", element: <PlatformShopsPage /> },
           { path: "demo-requests", element: <PlatformDemoRequestsPage /> },
+          { path: "account", element: <PlatformAccountPage /> },
         ],
       },
       {
